@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Law Sphere - Legal Assistance</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Law Sphere</h1>
+        <nav>
+            <ul>
+                <li><a href="#">Home</a></li>
+                <li><a href="#">Services</a></li>
+                <li><a href="#">Contact</a></li>
+                <li><a href="#">Legal Resources</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="chat-container">
+            <h2>Ask Your Legal Questions</h2>
+            <div class="chat-box" id="chat-box">
+                <div class="chat-message bot">Hello! How can I assist you today?</div>
+            </div>
+            <input type="text" id="user-input" placeholder="Type your question...">
+            <button onclick="sendMessage()">Send</button>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
