@@ -2,33 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Law Sphere</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot with Gemini</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Law Sphere Chatbot</h1>
-  <form id="chatForm">
-    <input type="text" id="userInput" placeholder="Type your message...">
-    <button type="submit">Send</button>
-  </form>
-  <div id="response"></div>
-
-  <script>
-    document.getElementById('chatForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const userInput = document.getElementById('userInput').value;
-      const responseDiv = document.getElementById('response');
-
-      const res = await fetch('https://f49e5f12-1e82-49af-aacd-76eb34f2fa31-00-8qvmj7mdscwa.pike.repl.co/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userInput })
-      });
-      const data = await res.json();
-      responseDiv.innerHTML = data.response;
-      document.getElementById('userInput').value = '';
-    });
-  </script>
+  <div class="chat-container">
+    <div id="chat-box" class="chat-box"></div>
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Type your message...">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
   <script src="script.js"></script>
 </body>
 </html>

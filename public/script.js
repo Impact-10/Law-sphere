@@ -1,41 +1,37 @@
-// Function to add messages to the chat box
+const chatBox = document.getElementById('chat-box');
+const userInput = document.getElementById('user-input');
+
 function addMessage(message, isUser = false) {
-    const chatBox = document.getElementById('chatBox');
-    const messageElement = document.createElement('p');
-    messageElement.textContent = message;
-    messageElement.className = isUser ? 'user-message' : 'bot-message';
-    chatBox.appendChild(messageElement);
-    chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to latest message
+  const messageDiv = document.createElement('div');
+  messageDiv.classList.add('message', isUser ? 'user-message' : 'bot-message');
+  messageDiv.textContent = message;
+  chatBox.appendChild(messageDiv);
+  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// Function to send query to Replit chatbot
-async function sendChatQuery() {
-    const userInput = document.getElementById('userInput').value.trim();
-    if (!userInput) return;
+function sendMessage() {
+  const message = userInput.value.trim();
+  if (!message) return;
 
-    // Display user message
-    addMessage(userInput, true);
-    document.getElementById('userInput').value = '';
+  addMessage(message, true);
+  userInput.value = '';
 
-    try {
-        const response = await fetch('https://<your-app>.repl.co/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: userInput })
-        });
-
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-
-        // Display bot response
-        addMessage(data.reply || 'Sorry, I couldn’t process that.');
-    } catch (error) {
-        addMessage('Error: Could not connect to the chatbot. Please try again later.');
-        console.error('Error:', error);
-    }
+  fetch('https://0d741327-a5e5-4ad9-a587-70d23bc5bb36-00-3r683pxcjo2u7.pike.replit.dev/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message })
+  })
+  .then(response => response.json())
+  .then(data => {
+    addMessage(data.reply, false);
+  })
+  .catch(error => {
+    addMessage('Error: Something went wrong.', false);
+    console.error('Error:', error);
+  });
 }
 
-// Allow sending with Enter key
-document.getElementById('userInput').addEventListener('keypress', (event) => {
-    if (event.key === 'Enter') sendChatQuery();
+// Allow sending message with Enter key
+userInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') sendMessage();
 });
