@@ -26,9 +26,12 @@ function sendMessage() {
     credentials: 'include',
     body: JSON.stringify({ message })
   })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) throw new Error('Network response was not ok');
+      return response.json();
+    })
     .then(data => {
-      addMessage(data.reply, false);
+      addMessage(data.reply || 'No response', false);
     })
     .catch(error => {
       addMessage('Error: Something went wrong.', false);
@@ -41,7 +44,7 @@ userInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') sendMessage();
 });
 
-// Google login redirect
-loginButton.addEventListener('click', () => {
-  window.location.href = `${BASE_URL}/auth/google`;
-});
+// Google login redirect (comment out for now due to verification issue)
+// loginButton.addEventListener('click', () => {
+//   window.location.href = `${BASE_URL}/auth/google`;
+// });
