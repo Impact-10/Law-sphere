@@ -2,7 +2,7 @@ const chatBox = document.getElementById('chat-box');
 const userInput = document.getElementById('user-input');
 // const loginButton = document.getElementById('login-button'); // Removed
 
-// Backend chat URL (hardcoded to your current Replit URL)
+// Backend chat URL (hardcoded to your dev URL)
 const CHAT_URL = 'https://0d741327-a5e5-4ad9-a587-70d23bc5bb36-00-3r683pxcjo2u7.pike.replit.dev/chat';
 
 function addMessage(message, isUser = false) {
@@ -28,10 +28,12 @@ function sendMessage() {
   })
     .then(response => {
       console.log('Response status:', response.status); // Debug log
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       return response.json();
     })
     .then(data => {
-      addMessage(data.reply, false);
+      console.log('Response data:', data); // Debug log
+      addMessage(data.reply || 'No reply', false);
     })
     .catch(error => {
       addMessage('Error: Something went wrong.', false);
