@@ -1,47 +1,57 @@
-const chatBox = document.getElementById('chat-box');
-const userInput = document.getElementById('user-input');
-// const loginButton = document.getElementById('login-button'); // Removed
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+require("dotenv").config();
 
-// Backend chat URL (hardcoded)
-const CHAT_URL = 'https://0d741327-a5e5-4ad9-a587-70d23bc5bb36-00-3r683pxcjo2u7.pike.replit.dev/chat';
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-function addMessage(message, isUser = false) {
-  const messageDiv = document.createElement('div');
-  messageDiv.classList.add('message', isUser ? 'user-message' : 'bot-message');
-  messageDiv.textContent = message;
-  chatBox.appendChild(messageDiv);
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-function sendMessage() {
-  const message = userInput.value.trim();
-  if (!message) return;
+app.use(bodyParser.json());
+app.use(cors());
 
-  addMessage(message, true);
-  userInput.value = '';
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-  fetch(CHAT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ message })
-  })
-    .then(response => response.json())
-    .then(data => {
-      addMessage(data.reply, false);
-    })
-    .catch(error => {
-      addMessage('Error: Something went wrong.', false);
-      console.error('Error:', error);
+// In-memory conversation history
+const conversation = [
+  {
+    role: "user",
+    parts: [
+      {
+        text: "You are a legal advice assistant. Provide concise, practical legal advice without disclaimers or lengthy explanations. Maintain the conversation context.",
+      },
+    ],
+  },
+];
+
+app.post("/chat", async (req, res) => {
+  const userMessage = req.body.message.toLowerCase(); // Normalize for search
+
+  conversation.push({ role: "user", parts: [{ text: userMessage }] });
+  if (conversation.length > 10) conversation.shift();
+
+  try {
+    const result = await model.generateContent({
+      contents: conversation,
     });
-}
+    const reply = result.response.text() || "No response generated.";
+    if (!reply) console.log("Debug: Empty response from model");
 
-// Allow sending message with Enter key
-userInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') sendMessage();
+    conversation.push({ role: "model", parts: [{ text: reply }] });
+
+    res.json({ reply });
+  } catch (error) {
+    console.error("Error:", error.message);
+    res.status(500).json({ error: error.message });
+  }
 });
 
-// Google login redirect (removed)
-// loginButton.addEventListener('click', () => {
-//   window.location.href = `${BASE_URL}/auth/google`;
-// });
+app.get("/", (req, res) => {
+  res.send("Legal Chatbot is live");
+});
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT} - Access at Replit URL`);
+});
