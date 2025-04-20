@@ -1,10 +1,11 @@
 const chatBox = document.getElementById('chat-box');
 const userInput = document.getElementById('user-input');
 const themeToggle = document.getElementById('theme-toggle');
+const loginButton = document.getElementById('login-button');
 
 const BASE_URL = 'https://0d741327-a5e5-4ad9-a587-70d23bc5bb36-00-3r683pxcjo2u7.pike.replit.dev';
 const CHAT_URL = `${BASE_URL}/chat`;
-// const GOOGLE_AUTH_URL = `${BASE_URL}/auth/google`; // Commented out since login is removed
+const GOOGLE_AUTH_URL = `${BASE_URL}/auth/google`; // Re-added for login
 
 function addMessage(message, isUser = false) {
   const messageDiv = document.createElement('div');
@@ -23,7 +24,7 @@ function sendMessage(message = userInput.value.trim()) {
   fetch(CHAT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // Send cookies for session
+    credentials: 'include',
     body: JSON.stringify({ message })
   })
     .then(response => {
@@ -35,7 +36,7 @@ function sendMessage(message = userInput.value.trim()) {
       console.log('Response data:', data);
       addMessage(data.reply || 'No reply', false);
 
-      // If response contains a signal to create a Google Doc (from your prev code)
+      // If response contains a signal to create a Google Doc
       if (data.createDoc) {
         createGoogleDoc(data.reply);
       }
@@ -46,7 +47,7 @@ function sendMessage(message = userInput.value.trim()) {
     });
 }
 
-// Optional: Create Google Doc after response (from your prev code)
+// Create Google Doc after response
 function createGoogleDoc(content) {
   fetch(`${BASE_URL}/create-doc`, {
     method: 'POST',
@@ -85,6 +86,11 @@ function clearChat() {
 themeToggle.addEventListener('click', () => {
   document.body.classList.toggle('dark-mode');
   themeToggle.textContent = document.body.classList.contains('dark-mode') ? 'Toggle Light Mode' : 'Toggle Dark Mode';
+});
+
+// Redirect to Google login
+loginButton.addEventListener('click', () => {
+  window.location.href = GOOGLE_AUTH_URL;
 });
 
 // Enter key support

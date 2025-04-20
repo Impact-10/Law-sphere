@@ -43,6 +43,22 @@
   background-color: #c33d2e;
 }
 
+.login-button {
+  padding: 10px;
+  font-size: 16px;
+  background-color: #4285f4; /* Google Blue */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  align-self: flex-end;
+  margin-bottom: 10px;
+}
+
+.login-button:hover {
+  background-color: #3267d6;
+}
+
 .chat-box {
   height: 400px;
   overflow-y: auto;
