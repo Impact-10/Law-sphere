@@ -2,17 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Law-sphere</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Law Sphere</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="chat-container">
-    <button id="login-button">Login with Google</button>
+    <header class="chat-header">
+      <h1 class="title">Law Sphere</h1>
+      <p class="subtitle">Your Legal Advice Assistant</p>
+    </header>
+    <button id="theme-toggle" class="theme-toggle">Toggle Dark Mode</button>
     <div id="chat-box" class="chat-box"></div>
+    <div class="quick-questions">
+      <h3 class="quick-questions-title">Quick Questions:</h3>
+      <div class="quick-buttons">
+        <button class="quick-question" data-message="What is a contract?">What is a contract?</button>
+        <button class="quick-question" data-message="How to draft a will?">How to draft a will?</button>
+        <button class="quick-question" data-message="What are my tenant rights?">What are my tenant rights?</button>
+        <button class="quick-question" data-message="How to file a lawsuit?">How to file a lawsuit?</button>
+      </div>
+    </div>
     <div class="input-area">
-      <input type="text" id="user-input" placeholder="Type your message..."/>
+      <input type="text" id="user-input" placeholder="Type your message..." />
       <button onclick="sendMessage()">Send</button>
+      <button onclick="clearChat()" class="clear-chat">Clear Chat</button>
     </div>
   </div>
 
