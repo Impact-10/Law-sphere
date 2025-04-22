@@ -34,7 +34,7 @@
           <a href="#chatbot" class="cta-button">Try the Chatbot</a>
         </div>
         <div class="hero-image-placeholder">
-          <span class="img-placeholder-text">[Hero Image]</span>
+          <span class="img-placeholder-text"><img src="./hero.jpg" height="260px"></span>
         </div>
       </div>
     </section>
@@ -134,27 +134,30 @@
     </div>
     <div class="generator-content">
       <div id="doc-selection" class="generator-section">
-        <h2>1. Select Document Template</h2>
-        <p>Choose a document template from our library to get started.</p>
-        <div id="template-list" class="template-grid"></div>
-      </div>
-      <div id="doc-questionnaire" class="generator-section" style="display:none;">
-        <h2>2. Fill Document Information</h2>
-        <p>Please answer the following questions to generate your document.</p>
-        <div id="questions-container"></div>
-        <div class="questionnaire-actions">
-          <button id="prev-question" class="nav-btn">Previous</button>
-          <button id="next-question" class="nav-btn">Next</button>
-          <button id="generate-final" class="generate-btn" style="display:none;">Generate Document</button>
+        <h2>1. Select Document</h2>
+        <p>Click a document to generate it with AI assistance.</p>
+        <div class="category-tabs" id="gen-category-tabs">
+          <button class="category-tab active" data-category="all">All</button>
         </div>
+        <div id="gen-document-content"></div>
+      </div>
+      <div id="doc-chat" class="generator-section" style="display:none;">
+        <h2>2. Answer Questions</h2>
+        <p>Chat with AI to fill the document. Enter your answers below.</p>
+        <div id="chat-box-gen" class="chat-box-gen"></div>
+        <div class="input-area-gen">
+          <input type="text" id="user-input-gen" placeholder="Type your answer..." />
+          <button id="send-btn-gen">Send</button>
+        </div>
+        <button id="generate-doc-final" class="generate-btn" style="display:none;">Generate Document</button>
       </div>
       <div id="doc-preview" class="generator-section" style="display:none;">
         <h2>3. Document Preview</h2>
-        <p>Your document has been generated. Review it and download when ready.</p>
+        <p>Your document is ready. Download it below.</p>
         <div id="preview-container" class="preview-box"></div>
         <div class="preview-actions">
           <button id="download-doc" class="download-btn">Download Document</button>
-          <button id="start-over" class="nav-btn">Start Over</button>
+          <button id="start-over-gen" class="nav-btn">Start Over</button>
         </div>
       </div>
     </div>
@@ -459,129 +462,222 @@
         </div>
         <div class="generator-content">
           <div id="doc-selection" class="generator-section">
-            <h2>1. Select Document Template</h2>
-            <p>Choose a document template from our library to get started.</p>
-            <div id="template-list" class="template-grid"></div>
-          </div>
-          <div id="doc-questionnaire" class="generator-section" style="display:none;">
-            <h2>2. Fill Document Information</h2>
-            <p>Please answer the following questions to generate your document.</p>
-            <div id="questions-container"></div>
-            <div class="questionnaire-actions">
-              <button id="prev-question" class="nav-btn">Previous</button>
-              <button id="next-question" class="nav-btn">Next</button>
-              <button id="generate-final" class="generate-btn" style="display:none;">Generate Document</button>
+            <h2>1. Select Document</h2>
+            <p>Click a document to generate it with AI assistance.</p>
+            <div class="category-tabs" id="gen-category-tabs">
+              <button class="category-tab active" data-category="all">All</button>
             </div>
+            <div id="gen-document-content"></div>
+          </div>
+          <div id="doc-chat" class="generator-section" style="display:none;">
+            <h2>2. Answer Questions</h2>
+            <p>Chat with AI to fill the document. Enter your answers below.</p>
+            <div id="chat-box-gen" class="chat-box-gen"></div>
+            <div class="input-area-gen">
+              <input type="text" id="user-input-gen" placeholder="Type your answer..." />
+              <button id="send-btn-gen">Send</button>
+            </div>
+            <button id="generate-doc-final" class="generate-btn" style="display:none;">Generate Document</button>
           </div>
           <div id="doc-preview" class="generator-section" style="display:none;">
             <h2>3. Document Preview</h2>
-            <p>Your document has been generated. Review it and download when ready.</p>
+            <p>Your document is ready. Download it below.</p>
             <div id="preview-container" class="preview-box"></div>
             <div class="preview-actions">
               <button id="download-doc" class="download-btn">Download Document</button>
-              <button id="start-over" class="nav-btn">Start Over</button>
+              <button id="start-over-gen" class="nav-btn">Start Over</button>
             </div>
           </div>
         </div>
       `;
 
       document.getElementById('back-home-gen-btn').addEventListener('click', backToHome);
-
-      await loadTemplates();
+      await loadGenDocuments();
       setupGeneratorEventListeners();
     }
 
-    async function loadTemplates() {
-      const templateList = document.getElementById('template-list');
-      templateList.innerHTML = '<div class="loading">Loading templates...</div>';
+    async function loadGenDocuments() {
+      const documentContent = document.getElementById('gen-document-content');
+      const categoryTabs = document.getElementById('gen-category-tabs');
+      documentContent.innerHTML = '<p style="text-align: center; padding: 20px;">Loading documents...</p>';
+      window.genCategoriesData = {}; // <-- GLOBAL!
       try {
         const querySnapshot = await db.collection('legal_documents').get();
-        templateList.innerHTML = '';
-        querySnapshot.forEach(doc => {
-          const template = doc.data();
-          const templateCard = document.createElement('div');
-          templateCard.className = 'template-card';
-          templateCard.innerHTML = `
-            <h4 class="template-title">${template.title.replace(/\.pdf$|\.doc$/, '')}</h4>
-            <p class="template-desc">${template.description || 'Legal document template'}</p>
-          `;
-          templateCard.addEventListener('click', () => selectTemplate(template.title));
-          templateList.appendChild(templateCard);
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const title = data.title.replace(/\.pdf$|\.doc$/, '');
+          const category = determineCategory(title, data.category);
+          if (!window.genCategoriesData[category]) window.genCategoriesData[category] = [];
+          window.genCategoriesData[category].push({
+            title: title,
+            url: data.url
+          });
         });
+
+        // Create category tabs
+        categoryTabs.innerHTML = '';
+        const allCategories = Object.keys(window.genCategoriesData).sort();
+        allCategories.forEach(category => {
+          const tab = document.createElement('button');
+          tab.className = 'category-tab';
+          tab.textContent = category;
+          tab.dataset.category = category;
+          tab.addEventListener('click', () => {
+            document.querySelectorAll('#gen-category-tabs .category-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            displayGenDocumentsByCategory(category, documentContent);
+          });
+          categoryTabs.appendChild(tab);
+        });
+
+        // Add "All" tab at the start
+        const allTab = document.createElement('button');
+        allTab.className = 'category-tab active';
+        allTab.textContent = 'All';
+        allTab.dataset.category = 'all';
+        allTab.addEventListener('click', () => {
+          document.querySelectorAll('#gen-category-tabs .category-tab').forEach(t => t.classList.remove('active'));
+          allTab.classList.add('active');
+          displayGenDocumentsByCategory('all', documentContent);
+        });
+        categoryTabs.prepend(allTab);
+
+        displayGenDocumentsByCategory('all', documentContent);
       } catch (error) {
-        templateList.innerHTML = '<div class="error">Error loading templates</div>';
-        console.error('Template load error:', error);
+        documentContent.innerHTML = `<p style="text-align: center; color: red; padding: 20px;">Error loading documents: ${error.message}</p>`;
+        console.error('Firestore error:', error);
       }
     }
 
-    async function selectTemplate(templateTitle) {
-      currentDocument = templateTitle;
-      document.getElementById('doc-selection').classList.remove('active');
-      document.getElementById('doc-questionnaire').classList.add('active');
-      currentQuestionIndex = 0;
+    function displayGenDocumentsByCategory(category, contentElement) {
+      contentElement.innerHTML = '';
+      const categoriesData = window.genCategoriesData || {};
+      if (category === 'all') {
+        Object.entries(categoriesData).forEach(([cat, documents]) => {
+          if (documents.length > 0) {
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'document-category';
+            const categoryTitle = document.createElement('h2');
+            categoryTitle.className = 'document-category-title';
+            categoryTitle.textContent = cat;
+            categoryDiv.appendChild(categoryTitle);
+            const documentsList = document.createElement('div');
+            documentsList.className = 'template-grid';
+            documents.forEach(doc => {
+              const docItem = document.createElement('div');
+              docItem.className = 'template-card';
+              docItem.innerHTML = `
+                <div class="template-title">${doc.title}</div>
+                <div class="template-desc">Click to generate</div>
+              `;
+              docItem.addEventListener('click', () => selectGenDocument(doc.title));
+              documentsList.appendChild(docItem);
+            });
+            categoryDiv.appendChild(documentsList);
+            contentElement.appendChild(categoryDiv);
+          }
+        });
+      } else {
+        if (categoriesData[category] && categoriesData[category].length > 0) {
+          const documentsList = document.createElement('div');
+          documentsList.className = 'template-grid';
+          categoriesData[category].forEach(doc => {
+            const docItem = document.createElement('div');
+            docItem.className = 'template-card';
+            docItem.innerHTML = `
+              <div class="template-title">${doc.title}</div>
+              <div class="template-desc">Click to generate</div>
+            `;
+            docItem.addEventListener('click', () => selectGenDocument(doc.title));
+            documentsList.appendChild(docItem);
+          });
+          contentElement.appendChild(documentsList);
+        } else {
+          contentElement.innerHTML = '<p style="text-align: center; padding: 20px;">No documents found in this category.</p>';
+        }
+      }
+    }
+
+
+    function createGenCategoryElement(category, documents) {
+      const categoryDiv = document.createElement('div');
+      categoryDiv.className = 'document-category';
+      const categoryTitle = document.createElement('h2');
+      categoryTitle.className = 'document-category-title';
+      categoryTitle.textContent = category;
+      categoryDiv.appendChild(categoryTitle);
+      const documentsList = document.createElement('div');
+      documentsList.className = 'document-list';
+      documents.forEach(doc => {
+        const docItem = document.createElement('div');
+        docItem.className = 'document-item';
+        docItem.innerHTML = `
+          <div class="document-title">${doc.title}</div>
+          <div class="document-action">Select ${doc.title}</div>
+        `;
+        docItem.addEventListener('click', () => selectGenDocument(doc.title));
+        documentsList.appendChild(docItem);
+      });
+      categoryDiv.appendChild(documentsList);
+      return categoryDiv;
+    }
+
+    function selectGenDocument(title) {
+      currentDocument = title;
+      document.getElementById('doc-selection').style.display = 'none';
+      document.getElementById('doc-chat').style.display = 'block';
+      documentQuestions = [];
       documentResponses = {};
+      fetchQuestions();
+    }
+
+    async function fetchQuestions() {
       try {
         const response = await fetch(`${BASE_URL}/get-document-questions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ documentTitle: templateTitle })
+          body: JSON.stringify({ documentTitle: currentDocument })
         });
         if (!response.ok) throw new Error('Failed to fetch questions');
         const data = await response.json();
         documentQuestions = data.questions || [];
-        renderQuestions();
+        addChatMessage('AI: Please answer the following questions to fill the document:', false);
+        documentQuestions.forEach(q => addChatMessage(`AI: ${q.question}`, false));
+        document.getElementById('send-btn-gen').style.display = 'block';
+        document.getElementById('generate-doc-final').style.display = 'none';
       } catch (error) {
-        alert('Error loading questions: ' + error.message);
+        addChatMessage(`Error: ${error.message}`, false);
         console.error('Question fetch error:', error);
       }
     }
 
-    function renderQuestions() {
-      const container = document.getElementById('questions-container');
-      container.innerHTML = '';
-      documentQuestions.forEach((question, index) => {
-        const questionDiv = document.createElement('div');
-        questionDiv.className = `question ${index === 0 ? 'active' : ''}`;
-        questionDiv.innerHTML = `
-          <label>${question.question}</label>
-          <input type="text" id="q-${question.id}" data-field="${question.fieldName}" ${question.required ? 'required' : ''}>
-        `;
-        container.appendChild(questionDiv);
-      });
-      setupQuestionNavigation();
+    function addChatMessage(text, isUser) {
+      const chatBox = document.getElementById('chat-box-gen');
+      if (!chatBox) return;
+      const messageDiv = document.createElement('div');
+      messageDiv.className = isUser ? 'message user-message' : 'message bot-message';
+      messageDiv.textContent = text;
+      chatBox.appendChild(messageDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    function setupQuestionNavigation() {
-      const prevButton = document.getElementById('prev-question');
-      const nextButton = document.getElementById('next-question');
-      const generateButton = document.getElementById('generate-final');
+    function sendGenMessage(message = document.getElementById('user-input-gen').value.trim()) {
+      if (!message) return;
+      addChatMessage(message, true);
+      document.getElementById('user-input-gen').value = '';
 
-      prevButton.addEventListener('click', () => {
-        if (currentQuestionIndex > 0) {
-          document.querySelectorAll('.question')[currentQuestionIndex].classList.remove('active');
-          currentQuestionIndex--;
-          document.querySelectorAll('.question')[currentQuestionIndex].classList.add('active');
-        }
-      });
-
-      nextButton.addEventListener('click', async () => {
-        const questions = document.querySelectorAll('.question');
-        const currentQuestion = questions[currentQuestionIndex];
-        const input = currentQuestion.querySelector('input');
-        documentResponses[input.dataset.field] = input.value;
-
-        if (currentQuestionIndex < documentQuestions.length - 1) {
-          currentQuestion.classList.remove('active');
-          currentQuestionIndex++;
-          questions[currentQuestionIndex].classList.add('active');
+      const currentQuestion = documentQuestions.find((q, i) => !documentResponses[q.fieldName] && i === Object.keys(documentResponses).length);
+      if (currentQuestion) {
+        documentResponses[currentQuestion.fieldName] = message;
+        if (Object.keys(documentResponses).length < documentQuestions.length) {
+          const nextQuestion = documentQuestions[Object.keys(documentResponses).length];
+          addChatMessage(`AI: ${nextQuestion.question}`, false);
         } else {
-          await generateDocument();
+          addChatMessage('AI: All questions answered. Click "Generate Document" to proceed.', false);
+          document.getElementById('generate-doc-final').style.display = 'block';
+          document.getElementById('send-btn-gen').style.display = 'none';
         }
-      });
-
-      generateButton.addEventListener('click', async () => {
-        await generateDocument();
-      });
+      }
     }
 
     async function generateDocument() {
@@ -596,12 +692,12 @@
         });
         if (!response.ok) throw new Error('Failed to generate document');
         const data = await response.json();
-        document.getElementById('doc-questionnaire').classList.remove('active');
-        document.getElementById('doc-preview').classList.add('active');
+        document.getElementById('doc-chat').style.display = 'none';
+        document.getElementById('doc-preview').style.display = 'block';
         document.getElementById('preview-container').innerHTML = data.documentContent.replace(/\n/g, '<br>');
         document.getElementById('download-doc').dataset.pdf = data.pdfBase64 || '';
       } catch (error) {
-        alert('Error generating document: ' + error.message);
+        addChatMessage(`Error: ${error.message}`, false);
         console.error('Generation error:', error);
       }
     }
@@ -624,16 +720,21 @@
         }
       });
 
-      document.getElementById('start-over')?.addEventListener('click', () => {
-        document.getElementById('doc-selection').classList.add('active');
-        document.getElementById('doc-questionnaire').classList.remove('active');
-        document.getElementById('doc-preview').classList.remove('active');
+      document.getElementById('start-over-gen')?.addEventListener('click', () => {
+        document.getElementById('doc-selection').style.display = 'block';
+        document.getElementById('doc-chat').style.display = 'none';
+        document.getElementById('doc-preview').style.display = 'none';
         currentDocument = null;
         documentQuestions = [];
         documentResponses = {};
-        currentQuestionIndex = 0;
-        loadTemplates();
+        loadGenDocuments();
       });
+
+      document.getElementById('send-btn-gen')?.addEventListener('click', () => sendGenMessage());
+      document.getElementById('user-input-gen')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendGenMessage();
+      });
+      document.getElementById('generate-doc-final')?.addEventListener('click', generateDocument);
     }
 
     function b64toBlob(b64Data, contentType = '', sliceSize = 512) {

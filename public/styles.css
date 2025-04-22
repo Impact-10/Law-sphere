@@ -569,6 +569,47 @@ button:hover,
   font-size: 1em;
   margin-bottom: 18px;
 }
+.generator-section {
+  padding: 20px;
+}
+
+.chat-box-gen {
+  height: 150px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+.input-area-gen {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+input#user-input-gen {
+  flex: 1;
+  padding: 5px;
+}
+
+.generate-btn, .nav-btn {
+  padding: 10px 20px;
+  background: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.generate-btn:hover, .nav-btn:hover {
+  background: #0056b3;
+}
+
+.preview-box {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+  min-height: 100px;
+}
 
 /* About Section */
 .about-section {
