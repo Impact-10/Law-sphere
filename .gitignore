@@ -69,5 +69,3 @@ node_modules/
 .dataconnect
 
 credentials.json
-
-firebaseConfig.js

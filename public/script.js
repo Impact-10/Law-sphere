@@ -1,5 +1,15 @@
 // ====================== Firebase Configuration ======================
-import { firebaseConfig } from './firebaseConfig.js';
+
+export const firebaseConfig = {
+  apiKey: "AIzaSyBoiTgE744HFmOd7rFajV1k-nmsIETjOLs",
+  authDomain: "law-sphere.firebaseapp.com",
+  projectId: "law-sphere",
+  storageBucket: "law-sphere.firebasestorage.app",
+  messagingSenderId: "662426188020",
+  appId: "1:662426188020:web:532de487ccfb6fe70646a1",
+  measurementId: "G-SXSJBVD62M"
+};
+
 
 // ====================== API Configuration ======================
 const BASE_URL = 'https://0d741327-a5e5-4ad9-a587-70d23bc5bb36-00-3r683pxcjo2u7.pike.replit.dev';
