@@ -163,9 +163,493 @@
   <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  
-  <!-- Main Script -->
-  <script type="module" src="script.js"></script>
-  <script type="module" src="firebaseConfig.js"></script>
+
+  <!-- Inline JavaScript -->
+  <script>
+    // ====================== Firebase Configuration ======================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBoiTgE744HFmOd7rFajV1k-nmsIETjOLs",
+      authDomain: "law-sphere.firebaseapp.com",
+      projectId: "law-sphere",
+      storageBucket: "law-sphere.firebasestorage.app",
+      messagingSenderId: "662426188020",
+      appId: "1:662426188020:web:532de487ccfb6fe70646a1",
+      measurementId: "G-SXSJBVD62M"
+    };
+
+    // ====================== API Configuration ======================
+    const BASE_URL = 'https://0d741327-a5e5-4ad9-a587-70d23bc5bb36-00-3r683pxcjo2u7.pike.replit.dev';
+    const CHAT_URL = `${BASE_URL}/chat`;
+    const GOOGLE_AUTH_URL = `${BASE_URL}/auth/google`;
+
+    // ====================== DOM Elements ======================
+    const mainContent = document.getElementById('main-content');
+    const documentsBrowser = document.getElementById('documents-browser');
+    const documentGenerator = document.getElementById('document-generator');
+    const chatBox = document.getElementById('chat-box');
+    const userInput = document.getElementById('user-input');
+    const loginButton = document.getElementById('login-button');
+    const sendBtn = document.getElementById('send-btn');
+    const clearChatBtn = document.getElementById('clear-chat-btn');
+    const fetchDocsBtn = document.getElementById('fetch-docs');
+    const generateDocBtn = document.getElementById('generate-doc');
+    const docCategories = document.getElementById('doc-categories');
+
+    // ====================== Global Variables ======================
+    let activeCategory = 'all';
+    let categoriesData = {};
+
+    // Document Generator State
+    let currentDocument = null;
+    let documentQuestions = [];
+    let documentResponses = {};
+    let currentQuestionIndex = 0;
+
+    // ====================== Firebase Initialization ======================
+    if (!window.firebase?.apps?.length) {
+      window.firebase.initializeApp(firebaseConfig);
+    }
+    const db = window.firebase.firestore();
+
+    // ====================== Event Listeners ======================
+    document.addEventListener('DOMContentLoaded', () => {
+      // Chat Functionality
+      sendBtn?.addEventListener('click', () => sendMessage());
+      clearChatBtn?.addEventListener('click', clearChat);
+      userInput?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+      });
+
+      // Quick Questions
+      document.querySelectorAll('.quick-question')?.forEach(button => {
+        button.addEventListener('click', () => {
+          const message = button.getAttribute('data-message');
+          sendMessage(message);
+        });
+      });
+
+      // Document Buttons
+      fetchDocsBtn?.addEventListener('click', showDocumentsBrowser);
+      generateDocBtn?.addEventListener('click', showDocumentGenerator);
+
+      // Login Button
+      loginButton?.addEventListener('click', () => {
+        window.location.href = GOOGLE_AUTH_URL;
+      });
+
+      // Navbar Smooth Scroll
+      document.querySelectorAll('.nav-link')?.forEach(link => {
+        link.addEventListener('click', (e) => {
+          const href = link.getAttribute('href');
+          if (href.startsWith('#')) {
+            e.preventDefault();
+            document.querySelector(href).scrollIntoView({ behavior: 'smooth' });
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+          }
+        });
+      });
+    });
+
+    // ====================== Chatbot Functions ======================
+    function sendMessage(message = userInput?.value?.trim()) {
+      if (!message) return;
+      addMessage(message, true);
+      userInput.value = '';
+
+      fetch(CHAT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      })
+        .then(response => {
+          if (!response.ok) throw new Error(`Error: ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          addMessage(data.reply || 'No response', false);
+        })
+        .catch(error => {
+          console.error('Chat error:', error);
+          addMessage('Sorry, there was an error processing your request.', false);
+        });
+    }
+
+    function addMessage(text, isUser) {
+      if (!chatBox) return;
+      const messageDiv = document.createElement('div');
+      messageDiv.className = isUser ? 'message user-message' : 'message bot-message';
+      messageDiv.textContent = text;
+      chatBox.appendChild(messageDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function clearChat() {
+      if (chatBox) chatBox.innerHTML = '';
+    }
+
+    // ====================== Document Browser Functions ======================
+    function showDocumentsBrowser() {
+      mainContent.style.display = 'none';
+      documentGenerator.style.display = 'none';
+      documentsBrowser.style.display = 'block';
+
+      const browserHTML = `
+        <div class="documents-container">
+          <div class="document-header">
+            <div class="document-header-actions">
+              <div class="browse-btn active">Browse Documents</div>
+              <button class="generate-btn" id="generate-doc-btn">Generate Document</button>
+            </div>
+            <button class="back-btn" id="back-home-btn">Back to Home</button>
+          </div>
+          <div class="category-tabs" id="category-tabs">
+            <button class="category-tab active" data-category="all">All</button>
+          </div>
+          <div id="document-content"></div>
+        </div>
+      `;
+
+      documentsBrowser.innerHTML = browserHTML;
+
+      document.getElementById('back-home-btn').addEventListener('click', backToHome);
+      document.getElementById('generate-doc-btn').addEventListener('click', showDocumentGenerator);
+
+      loadDocuments();
+    }
+
+    function backToHome() {
+      documentsBrowser.style.display = 'none';
+      documentGenerator.style.display = 'none';
+      mainContent.style.display = 'block';
+    }
+
+    function loadDocuments() {
+      const documentContent = document.getElementById('document-content');
+      const categoryTabs = document.getElementById('category-tabs');
+
+      documentContent.innerHTML = '<p style="text-align: center; padding: 20px;">Loading documents...</p>';
+
+      db.collection('legal_documents')
+        .get()
+        .then((querySnapshot) => {
+          categoriesData = {};
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const title = data.title.replace(/\.pdf$|\.doc$/, '');
+            const category = determineCategory(title, data.category);
+            if (!categoriesData[category]) categoriesData[category] = [];
+            categoriesData[category].push({
+              title: title,
+              url: data.url
+            });
+          });
+
+          // Create category tabs
+          const allCategories = Object.keys(categoriesData).sort();
+          allCategories.forEach(category => {
+            const tab = document.createElement('button');
+            tab.className = 'category-tab';
+            tab.textContent = category;
+            tab.dataset.category = category;
+            tab.addEventListener('click', () => {
+              document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+              tab.classList.add('active');
+              displayDocumentsByCategory(category, documentContent);
+            });
+            categoryTabs.appendChild(tab);
+          });
+
+          // Display all documents initially
+          displayDocumentsByCategory('all', documentContent);
+
+          // Add success message
+          const totalDocs = Object.values(categoriesData).reduce((acc, docs) => acc + docs.length, 0);
+          const messageElement = document.createElement('div');
+          messageElement.className = 'bot-message';
+          messageElement.textContent = `Fetched ${totalDocs} documents across ${allCategories.length} categories.`;
+          documentContent.prepend(messageElement);
+        })
+        .catch((error) => {
+          documentContent.innerHTML = `<p style="text-align: center; color: red; padding: 20px;">Error loading documents: ${error.message}</p>`;
+          console.error('Firestore error:', error);
+        });
+    }
+
+    function determineCategory(title, existingCategory) {
+      const categories = {
+        'Form': ['form', 'application', 'declaration', 'nomination', 'certificate', 'letter'],
+        'Bank Documents': ['bank', 'account', 'nach', 'statement', 'transfer'],
+        'Legal Documents': ['legal', 'affidavit', 'power of attorney', 'agreement', 'contract'],
+        'Address Proof': ['address', 'residence', 'utility', 'rent']
+      };
+      if (existingCategory && Object.keys(categories).includes(existingCategory)) {
+        return existingCategory;
+      }
+      const lowercaseTitle = title.toLowerCase();
+      for (const [category, keywords] of Object.entries(categories)) {
+        if (keywords.some(keyword => lowercaseTitle.includes(keyword))) {
+          return category;
+        }
+      }
+      return 'Miscellaneous';
+    }
+
+    function displayDocumentsByCategory(category, contentElement) {
+      contentElement.innerHTML = '';
+      if (category === 'all') {
+        Object.entries(categoriesData).forEach(([cat, documents]) => {
+          if (documents.length > 0) {
+            const categoryElement = createCategoryElement(cat, documents);
+            contentElement.appendChild(categoryElement);
+          }
+        });
+      } else {
+        if (categoriesData[category] && categoriesData[category].length > 0) {
+          const categoryElement = createCategoryElement(category, categoriesData[category]);
+          contentElement.appendChild(categoryElement);
+        } else {
+          contentElement.innerHTML = '<p style="text-align: center; padding: 20px;">No documents found in this category.</p>';
+        }
+      }
+    }
+
+    function createCategoryElement(category, documents) {
+      const categoryDiv = document.createElement('div');
+      categoryDiv.className = 'document-category';
+      const categoryTitle = document.createElement('h2');
+      categoryTitle.className = 'document-category-title';
+      categoryTitle.textContent = category;
+      categoryDiv.appendChild(categoryTitle);
+      const documentsList = document.createElement('div');
+      documentsList.className = 'document-list';
+      documents.forEach(doc => {
+        const docItem = document.createElement('div');
+        docItem.className = 'document-item';
+        docItem.innerHTML = `
+          <div class="document-title">${doc.title}</div>
+          <div class="document-action">Download ${doc.title}</div>
+        `;
+        docItem.addEventListener('click', () => downloadDocument(doc.url, doc.title));
+        documentsList.appendChild(docItem);
+      });
+      categoryDiv.appendChild(documentsList);
+      return categoryDiv;
+    }
+
+    function downloadDocument(url, filename) {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${filename}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // ====================== Document Generator Functions ======================
+    async function showDocumentGenerator() {
+      mainContent.style.display = 'none';
+      documentsBrowser.style.display = 'none';
+      documentGenerator.style.display = 'block';
+
+      documentGenerator.innerHTML = `
+        <div class="generator-header">
+          <h1 class="generator-title">Document Generation</h1>
+          <button class="back-home-btn" id="back-home-gen-btn">Back to Home</button>
+        </div>
+        <div class="generator-content">
+          <div id="doc-selection" class="generator-section">
+            <h2>1. Select Document Template</h2>
+            <p>Choose a document template from our library to get started.</p>
+            <div id="template-list" class="template-grid"></div>
+          </div>
+          <div id="doc-questionnaire" class="generator-section" style="display:none;">
+            <h2>2. Fill Document Information</h2>
+            <p>Please answer the following questions to generate your document.</p>
+            <div id="questions-container"></div>
+            <div class="questionnaire-actions">
+              <button id="prev-question" class="nav-btn">Previous</button>
+              <button id="next-question" class="nav-btn">Next</button>
+              <button id="generate-final" class="generate-btn" style="display:none;">Generate Document</button>
+            </div>
+          </div>
+          <div id="doc-preview" class="generator-section" style="display:none;">
+            <h2>3. Document Preview</h2>
+            <p>Your document has been generated. Review it and download when ready.</p>
+            <div id="preview-container" class="preview-box"></div>
+            <div class="preview-actions">
+              <button id="download-doc" class="download-btn">Download Document</button>
+              <button id="start-over" class="nav-btn">Start Over</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('back-home-gen-btn').addEventListener('click', backToHome);
+
+      await loadTemplates();
+      setupGeneratorEventListeners();
+    }
+
+    async function loadTemplates() {
+      const templateList = document.getElementById('template-list');
+      templateList.innerHTML = '<div class="loading">Loading templates...</div>';
+      try {
+        const querySnapshot = await db.collection('legal_documents').get();
+        templateList.innerHTML = '';
+        querySnapshot.forEach(doc => {
+          const template = doc.data();
+          const templateCard = document.createElement('div');
+          templateCard.className = 'template-card';
+          templateCard.innerHTML = `
+            <h4 class="template-title">${template.title.replace(/\.pdf$|\.doc$/, '')}</h4>
+            <p class="template-desc">${template.description || 'Legal document template'}</p>
+          `;
+          templateCard.addEventListener('click', () => selectTemplate(template.title));
+          templateList.appendChild(templateCard);
+        });
+      } catch (error) {
+        templateList.innerHTML = '<div class="error">Error loading templates</div>';
+        console.error('Template load error:', error);
+      }
+    }
+
+    async function selectTemplate(templateTitle) {
+      currentDocument = templateTitle;
+      document.getElementById('doc-selection').classList.remove('active');
+      document.getElementById('doc-questionnaire').classList.add('active');
+      currentQuestionIndex = 0;
+      documentResponses = {};
+      try {
+        const response = await fetch(`${BASE_URL}/get-document-questions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ documentTitle: templateTitle })
+        });
+        if (!response.ok) throw new Error('Failed to fetch questions');
+        const data = await response.json();
+        documentQuestions = data.questions || [];
+        renderQuestions();
+      } catch (error) {
+        alert('Error loading questions: ' + error.message);
+        console.error('Question fetch error:', error);
+      }
+    }
+
+    function renderQuestions() {
+      const container = document.getElementById('questions-container');
+      container.innerHTML = '';
+      documentQuestions.forEach((question, index) => {
+        const questionDiv = document.createElement('div');
+        questionDiv.className = `question ${index === 0 ? 'active' : ''}`;
+        questionDiv.innerHTML = `
+          <label>${question.question}</label>
+          <input type="text" id="q-${question.id}" data-field="${question.fieldName}" ${question.required ? 'required' : ''}>
+        `;
+        container.appendChild(questionDiv);
+      });
+      setupQuestionNavigation();
+    }
+
+    function setupQuestionNavigation() {
+      const prevButton = document.getElementById('prev-question');
+      const nextButton = document.getElementById('next-question');
+      const generateButton = document.getElementById('generate-final');
+
+      prevButton.addEventListener('click', () => {
+        if (currentQuestionIndex > 0) {
+          document.querySelectorAll('.question')[currentQuestionIndex].classList.remove('active');
+          currentQuestionIndex--;
+          document.querySelectorAll('.question')[currentQuestionIndex].classList.add('active');
+        }
+      });
+
+      nextButton.addEventListener('click', async () => {
+        const questions = document.querySelectorAll('.question');
+        const currentQuestion = questions[currentQuestionIndex];
+        const input = currentQuestion.querySelector('input');
+        documentResponses[input.dataset.field] = input.value;
+
+        if (currentQuestionIndex < documentQuestions.length - 1) {
+          currentQuestion.classList.remove('active');
+          currentQuestionIndex++;
+          questions[currentQuestionIndex].classList.add('active');
+        } else {
+          await generateDocument();
+        }
+      });
+
+      generateButton.addEventListener('click', async () => {
+        await generateDocument();
+      });
+    }
+
+    async function generateDocument() {
+      try {
+        const response = await fetch(`${BASE_URL}/generate-filled-document`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            documentTitle: currentDocument,
+            responses: documentResponses
+          })
+        });
+        if (!response.ok) throw new Error('Failed to generate document');
+        const data = await response.json();
+        document.getElementById('doc-questionnaire').classList.remove('active');
+        document.getElementById('doc-preview').classList.add('active');
+        document.getElementById('preview-container').innerHTML = data.documentContent.replace(/\n/g, '<br>');
+        document.getElementById('download-doc').dataset.pdf = data.pdfBase64 || '';
+      } catch (error) {
+        alert('Error generating document: ' + error.message);
+        console.error('Generation error:', error);
+      }
+    }
+
+    function setupGeneratorEventListeners() {
+      document.getElementById('download-doc')?.addEventListener('click', () => {
+        const pdfData = document.getElementById('download-doc').dataset.pdf;
+        if (pdfData) {
+          const blob = b64toBlob(pdfData, 'application/pdf');
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${currentDocument}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } else {
+          alert('No PDF data available for download.');
+        }
+      });
+
+      document.getElementById('start-over')?.addEventListener('click', () => {
+        document.getElementById('doc-selection').classList.add('active');
+        document.getElementById('doc-questionnaire').classList.remove('active');
+        document.getElementById('doc-preview').classList.remove('active');
+        currentDocument = null;
+        documentQuestions = [];
+        documentResponses = {};
+        currentQuestionIndex = 0;
+        loadTemplates();
+      });
+    }
+
+    function b64toBlob(b64Data, contentType = '', sliceSize = 512) {
+      const byteCharacters = atob(b64Data);
+      const byteArrays = [];
+      for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+        const slice = byteCharacters.slice(offset, offset + sliceSize);
+        const byteNumbers = new Array(slice.length);
+        for (let i = 0; i < slice.length; i++) {
+          byteNumbers[i] = slice.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        byteArrays.push(byteArray);
+      }
+      return new Blob(byteArrays, { type: contentType });
+    }
+  </script>
 </body>
 </html>
