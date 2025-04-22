@@ -495,6 +495,7 @@
       await loadGenDocuments();
       setupGeneratorEventListeners();
     }
+
     async function loadGenDocuments() {
       const documentContent = document.getElementById('gen-document-content');
       const categoryTabs = document.getElementById('gen-category-tabs');
@@ -502,9 +503,11 @@
       window.genCategoriesData = {}; // <-- GLOBAL!
       try {
         const querySnapshot = await db.collection('legal_documents').get();
+        console.log("Documents fetched from Firestore for generator:");
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          const title = data.title.replace(/\.pdf$|\.doc$/, '');
+          const title = data.title.replace(/\.pdf$|\.doc$/, ''); // Normalize title
+          console.log("Document title:", title);
           const category = determineCategory(title, data.category);
           if (!window.genCategoriesData[category]) window.genCategoriesData[category] = [];
           window.genCategoriesData[category].push({
@@ -597,32 +600,9 @@
       }
     }
 
-
-    function createGenCategoryElement(category, documents) {
-      const categoryDiv = document.createElement('div');
-      categoryDiv.className = 'document-category';
-      const categoryTitle = document.createElement('h2');
-      categoryTitle.className = 'document-category-title';
-      categoryTitle.textContent = category;
-      categoryDiv.appendChild(categoryTitle);
-      const documentsList = document.createElement('div');
-      documentsList.className = 'document-list';
-      documents.forEach(doc => {
-        const docItem = document.createElement('div');
-        docItem.className = 'document-item';
-        docItem.innerHTML = `
-          <div class="document-title">${doc.title}</div>
-          <div class="document-action">Select ${doc.title}</div>
-        `;
-        docItem.addEventListener('click', () => selectGenDocument(doc.title));
-        documentsList.appendChild(docItem);
-      });
-      categoryDiv.appendChild(documentsList);
-      return categoryDiv;
-    }
-
     function selectGenDocument(title) {
-      currentDocument = title;
+      currentDocument = title.replace(/\.pdf$|\.doc$/, ''); // Normalize title for consistency
+      console.log("Selected document for generation:", currentDocument);
       document.getElementById('doc-selection').style.display = 'none';
       document.getElementById('doc-chat').style.display = 'block';
       documentQuestions = [];
@@ -632,14 +612,16 @@
 
     async function fetchQuestions() {
       try {
+        console.log("Fetching questions for document:", currentDocument);
         const response = await fetch(`${BASE_URL}/get-document-questions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ documentTitle: currentDocument })
         });
-        if (!response.ok) throw new Error('Failed to fetch questions');
+        if (!response.ok) throw new Error(`Failed to fetch questions: ${response.status}`);
         const data = await response.json();
         documentQuestions = data.questions || [];
+        console.log("Questions received:", documentQuestions);
         addChatMessage('AI: Please answer the following questions to fill the document:', false);
         documentQuestions.forEach(q => addChatMessage(`AI: ${q.question}`, false));
         document.getElementById('send-btn-gen').style.display = 'block';
@@ -668,6 +650,7 @@
       const currentQuestion = documentQuestions.find((q, i) => !documentResponses[q.fieldName] && i === Object.keys(documentResponses).length);
       if (currentQuestion) {
         documentResponses[currentQuestion.fieldName] = message;
+        console.log("Current responses:", documentResponses);
         if (Object.keys(documentResponses).length < documentQuestions.length) {
           const nextQuestion = documentQuestions[Object.keys(documentResponses).length];
           addChatMessage(`AI: ${nextQuestion.question}`, false);
@@ -681,6 +664,8 @@
 
     async function generateDocument() {
       try {
+        console.log("Generating document with title:", currentDocument);
+        console.log("Responses:", documentResponses);
         const response = await fetch(`${BASE_URL}/generate-filled-document`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -689,8 +674,9 @@
             responses: documentResponses
           })
         });
-        if (!response.ok) throw new Error('Failed to generate document');
+        if (!response.ok) throw new Error(`Failed to generate document: ${response.status}`);
         const data = await response.json();
+        console.log("Document generation response:", data);
         document.getElementById('doc-chat').style.display = 'none';
         document.getElementById('doc-preview').style.display = 'block';
         document.getElementById('preview-container').innerHTML = data.documentContent.replace(/\n/g, '<br>');
