@@ -4,33 +4,114 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Law Sphere</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="chat-container">
-    <header class="chat-header">
-      <h1 class="title">Law Sphere</h1>
-      <p class="subtitle">Your Legal Advice Assistant</p>
-    </header>
-    <button id="theme-toggle" class="theme-toggle">Toggle Dark Mode</button>
-    <button id="login-button" class="login-button">Login with Google</button>
-    <div id="chat-box" class="chat-box"></div>
-    <div class="quick-questions">
-      <h3 class="quick-questions-title">Quick Questions:</h3>
-      <div class="quick-buttons">
-        <button class="quick-question" data-message="What is a contract?">What is a contract?</button>
-        <button class="quick-question" data-message="How to draft a will?">How to draft a will?</button>
-        <button class="quick-question" data-message="What are my tenant rights?">What are my tenant rights?</button>
-        <button class="quick-question" data-message="How to file a lawsuit?">How to file a lawsuit?</button>
+  <div id="main-content">
+    <!-- Transparent Navbar -->
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-logo">Law Sphere</div>
+        <ul class="nav-links">
+          <li><a href="#home" class="nav-link active">Home</a></li>
+          <li><a href="#chatbot" class="nav-link">Chatbot</a></li>
+          <li><a href="#documents" class="nav-link">Documents</a></li>
+          <li><a href="#about" class="nav-link">About Us</a></li>
+        </ul>
       </div>
-    </div>
-    <div class="input-area">
-      <input type="text" id="user-input" placeholder="Type your message..." />
-      <button onclick="sendMessage()">Send</button>
-      <button onclick="clearChat()" class="clear-chat">Clear Chat</button>
-    </div>
+    </nav>
+
+    <!-- Home Section -->
+    <section id="home" class="section hero-section">
+      <div class="hero-content">
+        <div>
+          <h1 class="hero-title">AI-Powered Legal Assistance</h1>
+          <p class="hero-subtitle">
+            Empower your legal journey with instant AI advice and document automation.<br>
+            Fast. Reliable. Confidential.
+          </p>
+          <a href="#chatbot" class="cta-button">Try the Chatbot</a>
+        </div>
+        <div class="hero-image-placeholder">
+          <span class="img-placeholder-text">[Hero Image]</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Chatbot Section -->
+    <section id="chatbot" class="section chatbot-section">
+      <div class="chatbot-desc">
+        <h2>AI Legal Chatbot</h2>
+        <p>
+          Instantly get answers to your legal questions, draft documents, and receive guidance 24/7.<br>
+          Our AI chatbot is designed to make legal help accessible and easy for everyone.
+        </p>
+      </div>
+      <div class="chatbot-interface">
+        <div class="chatbot-image-placeholder">
+          <span class="img-placeholder-text">[Chatbot Illustration]</span>
+        </div>
+        <div class="chatbot-box">
+          <div id="chat-box" class="chat-box"></div>
+          <div class="input-area">
+            <input type="text" id="user-input" placeholder="Type your message..." />
+            <button id="send-btn">Send</button>
+            <button id="clear-chat-btn" class="clear-chat">Clear Chat</button>
+          </div>
+          <button id="login-button" class="login-button">Login with Google</button>
+        </div>
+      </div>
+      <div class="quick-questions">
+        <h3 class="quick-questions-title">Quick Questions:</h3>
+        <div class="quick-buttons">
+          <button class="quick-question" data-message="What is a contract?">What is a contract?</button>
+          <button class="quick-question" data-message="How to draft a will?">How to draft a will?</button>
+          <button class="quick-question" data-message="What are my tenant rights?">What are my tenant rights?</button>
+          <button class="quick-question" data-message="How to file a lawsuit?">How to file a lawsuit?</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Documents Section -->
+    <section id="documents" class="section documents-section">
+      <div class="documents-content">
+        <div class="documents-text">
+          <h2>Legal Documents & Templates</h2>
+          <p>
+            Instantly fetch, download, and auto-fill legal documents—from affidavits to agreements.<br>
+            Save time, reduce errors, and stay compliant with our document automation tools.
+          </p>
+          <button id="fetch-docs" class="cta-button doc-btn">Browse Documents</button>
+        </div>
+        <div class="documents-image-placeholder">
+          <span class="img-placeholder-text">[Documents Image]</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- About Us Section -->
+    <section id="about" class="section about-section">
+      <div class="about-content">
+        <h2>About Law Sphere</h2>
+        <p>
+          Law Sphere is building the next generation of legal assistance—AI-powered, accessible, and secure.<br>
+          Our mission is to democratize legal help, making it affordable and available to all.
+        </p>
+        <div class="about-image-placeholder">
+          <span class="img-placeholder-text">[Team/Office Image]</span>
+        </div>
+      </div>
+    </section>
   </div>
 
+  <div id="documents-browser" style="display:none;"></div>
+
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  
+  <!-- Main Script -->
   <script src="script.js"></script>
 </body>
 </html>
