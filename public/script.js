@@ -28,15 +28,16 @@ let documentQuestions = [];
 let documentResponses = {};
 let currentQuestionIndex = 0;
 
+// ====================== Firebase Initialization ======================
+if (!window.firebase.apps.length) {
+  window.firebase.initializeApp(firebaseConfig);
+}
+const db = window.firebase.firestore();
+
 // ====================== Event Listeners ======================
 document.addEventListener('DOMContentLoaded', function() {
-  // Initialize Firebase
-  if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-  }
-
   // Chat Functionality
-  if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+  if (sendBtn) sendBtn.addEventListener('click', () => sendMessage());
   if (clearChatBtn) clearChatBtn.addEventListener('click', clearChat);
   if (userInput) {
     userInput.addEventListener('keypress', (e) => {
@@ -45,12 +46,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Document Buttons
-  if (fetchDocsBtn) {
-    fetchDocsBtn.addEventListener('click', showDocumentsBrowser);
-  }
-  if (generateDocBtn) {
-    generateDocBtn.addEventListener('click', showDocumentGenerator);
-  }
+  if (fetchDocsBtn) fetchDocsBtn.addEventListener('click', showDocumentsBrowser);
+  if (generateDocBtn) generateDocBtn.addEventListener('click', showDocumentGenerator);
 
   // Login Button
   if (loginButton) {
@@ -80,6 +77,43 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 });
+
+// ====================== Chatbot Functions ======================
+function sendMessage(message = userInput.value.trim()) {
+  if (!message) return;
+  addMessage(message, true);
+  userInput.value = '';
+
+  fetch(CHAT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message })
+  })
+    .then(response => {
+      if (!response.ok) throw new Error(`Error: ${response.status}`);
+      return response.json();
+    })
+    .then(data => {
+      addMessage(data.reply || 'No response', false);
+    })
+    .catch(error => {
+      console.error('Chat error:', error);
+      addMessage('Sorry, there was an error processing your request.', false);
+    });
+}
+
+function addMessage(text, isUser) {
+  if (!chatBox) return;
+  const messageDiv = document.createElement('div');
+  messageDiv.className = isUser ? 'message user-message' : 'message bot-message';
+  messageDiv.textContent = text;
+  chatBox.appendChild(messageDiv);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function clearChat() {
+  if (chatBox) chatBox.innerHTML = '';
+}
 
 // ====================== Document Browser Functions ======================
 function showDocumentsBrowser() {
@@ -125,7 +159,7 @@ function loadDocuments() {
 
   documentContent.innerHTML = '<p style="text-align: center; padding: 20px;">Loading documents...</p>';
 
-  firebase.firestore().collection('legal_documents')
+  db.collection('legal_documents')
     .get()
     .then((querySnapshot) => {
       categoriesData = {};
@@ -290,7 +324,7 @@ async function loadTemplates() {
   const templateGrid = document.getElementById('template-grid');
   templateGrid.innerHTML = '<div class="loading">Loading templates...</div>';
   try {
-    const querySnapshot = await firebase.firestore().collection('legal_documents').get();
+    const querySnapshot = await db.collection('legal_documents').get();
     templateGrid.innerHTML = '';
     querySnapshot.forEach(doc => {
       const template = doc.data();
@@ -427,42 +461,4 @@ function b64toBlob(b64Data, contentType = '', sliceSize = 512) {
     byteArrays.push(byteArray);
   }
   return new Blob(byteArrays, { type: contentType });
-}
-
-// ====================== Chatbot Functions ======================
-function sendMessage(message) {
-  const userMessage = message || userInput?.value?.trim();
-  if (!userMessage) return;
-  addMessage(userMessage, true);
-  if (userInput) userInput.value = '';
-  fetch(CHAT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ message: userMessage })
-  })
-    .then(response => {
-      if (!response.ok) throw new Error(`Error: ${response.status}`);
-      return response.json();
-    })
-    .then(data => {
-      addMessage(data.reply || 'No response', false);
-    })
-    .catch(error => {
-      console.error('Chat error:', error);
-      addMessage('Sorry, there was an error processing your request.', false);
-    });
-}
-
-function addMessage(text, isUser) {
-  if (!chatBox) return;
-  const messageDiv = document.createElement('div');
-  messageDiv.className = isUser ? 'message user-message' : 'message bot-message';
-  messageDiv.textContent = text;
-  chatBox.appendChild(messageDiv);
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-function clearChat() {
-  if (chatBox) chatBox.innerHTML = '';
 }

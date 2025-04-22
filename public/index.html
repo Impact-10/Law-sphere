@@ -50,7 +50,7 @@
       </div>
       <div class="chatbot-interface">
         <div class="chatbot-image-placeholder">
-          <span class="img-placeholder-text">[Chatbot Illustration]</span>
+          <span class="img-placeholder-text"><img src="./chatbot.jpg" height="260px" width="340px"></span>
         </div>
         <div class="chatbot-box">
           <div id="chat-box" class="chat-box"></div>
@@ -88,9 +88,10 @@
           </div>
         </div>
         <div class="documents-image-placeholder">
-          <span class="img-placeholder-text">[Documents Image]</span>
+          <span class="img-placeholder-text"><img src="./document.jpg" height="260px" width="340px"></span>
         </div>
       </div>
+      <div id="doc-categories" class="doc-categories"></div>
     </section>
 
     <!-- About Us Section -->
@@ -102,23 +103,57 @@
           Our mission is to democratize legal help, making it affordable and available to all.
         </p>
         <div class="about-image-placeholder">
-          <span class="img-placeholder-text">[Team/Office Image]</span>
+          <span class="img-placeholder-text"><img src="./aboutus.jpg" height="200px" width="340px"></span>
         </div>
       </div>
     </section>
   </div>
 
-  <!-- Document Browser Page (hidden by default) -->
+  <!-- Documents Browser -->
   <div id="documents-browser" style="display:none;"></div>
   
-  <!-- Document Generator Page (hidden by default) -->
-  <div id="document-generator" style="display:none;"></div>
+  <!-- Document Generator -->
+  <div id="document-generator" style="display:none;">
+    <div class="generator-header">
+      <h1 class="generator-title">Document Generation</h1>
+      <button class="back-home-btn" onclick="backToHome()">Back to Home</button>
+    </div>
+    
+    <div class="generator-content">
+      <div id="doc-selection" class="generator-section">
+        <h2>1. Select Document Template</h2>
+        <p>Choose a document template from our library to get started.</p>
+        <div id="template-list" class="template-grid"></div>
+      </div>
+      
+      <div id="doc-questionnaire" class="generator-section" style="display:none;">
+        <h2>2. Fill Document Information</h2>
+        <p>Please answer the following questions to generate your document.</p>
+        <div id="questions-container"></div>
+        <div class="questionnaire-actions">
+          <button id="prev-question" class="nav-btn">Previous</button>
+          <button id="next-question" class="nav-btn">Next</button>
+          <button id="generate-final" class="generate-btn" style="display:none;">Generate Document</button>
+        </div>
+      </div>
+      
+      <div id="doc-preview" class="generator-section" style="display:none;">
+        <h2>3. Document Preview</h2>
+        <p>Your document has been generated. Review it and download when ready.</p>
+        <div id="preview-container" class="preview-box"></div>
+        <div class="preview-actions">
+          <button id="download-doc" class="download-btn">Download Document</button>
+          <button id="start-over" class="nav-btn">Start Over</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   
   <!-- Main Script -->
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
