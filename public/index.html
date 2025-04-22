@@ -82,7 +82,10 @@
             Instantly fetch, download, and auto-fill legal documents—from affidavits to agreements.<br>
             Save time, reduce errors, and stay compliant with our document automation tools.
           </p>
-          <button id="fetch-docs" class="cta-button doc-btn">Browse Documents</button>
+          <div class="document-actions">
+            <button id="fetch-docs" class="cta-button doc-btn">Browse Documents</button>
+            <button id="generate-doc" class="cta-button gen-btn">Generate Document</button>
+          </div>
         </div>
         <div class="documents-image-placeholder">
           <span class="img-placeholder-text">[Documents Image]</span>
@@ -105,7 +108,11 @@
     </section>
   </div>
 
+  <!-- Document Browser Page (hidden by default) -->
   <div id="documents-browser" style="display:none;"></div>
+  
+  <!-- Document Generator Page (hidden by default) -->
+  <div id="document-generator" style="display:none;"></div>
 
   <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>

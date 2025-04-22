@@ -1,13 +1,3 @@
-// ====================== Global Variables ======================
-const mainContent = document.getElementById('main-content');
-const documentsBrowser = document.getElementById('documents-browser');
-const chatBox = document.getElementById('chat-box');
-const userInput = document.getElementById('user-input');
-const loginButton = document.getElementById('login-button');
-const sendBtn = document.getElementById('send-btn');
-const clearChatBtn = document.getElementById('clear-chat-btn');
-const fetchDocsBtn = document.getElementById('fetch-docs');
-
 // ====================== Firebase Configuration ======================
 const firebaseConfig = {
   apiKey: "AIzaSyBoiTgE744HFmOd7rFajV1k-nmsIETjOLs",
@@ -19,300 +9,36 @@ const firebaseConfig = {
   measurementId: "G-SXSJBVD62M"
 };
 
-// ====================== Document Categories Configuration ======================
-const categories = {
-  'Identity Proof': { desc: 'Government-issued identity documents', keywords: ['aadhaar', 'pan', 'passport'] },
-  'Address Proof': { desc: 'Documents to verify residential address', keywords: ['utility', 'rent', 'agreement'] },
-  'Bank Documents': { desc: 'Banking-related forms or statements', keywords: ['nach', 'bank', 'statement'] },
-  'Income Proof': { desc: 'Documents to prove income', keywords: ['salary', 'itr'] },
-  'Education Documents': { desc: 'Academic credentials', keywords: ['degree', 'marksheet'] },
-  'Employment Documents': { desc: 'Job-related documents', keywords: ['offer', 'experience'] },
-  'Legal Documents': { desc: 'Legal declarations and authorizations', keywords: ['affidavit', 'power of attorney'] },
-  'Health Documents': { desc: 'Health or insurance records', keywords: ['insurance', 'medical'] },
-  'Form': { desc: 'Various application and legal forms', keywords: [
-    'form', 'affidavit', 'agreement', 'application', 'complaint', 'petition',
-    'contract', 'template', 'registration', 'license', 'licence', 'claim',
-    'nomination', 'declaration', 'certificate', 'renewal', 'format', 'bond'
-  ] },
-  'Miscellaneous': { desc: 'Other uncategorized documents', keywords: [] }
-};
-
 // ====================== API Configuration ======================
 const BASE_URL = 'https://0d741327-a5e5-4ad9-a587-70d23bc5bb36-00-3r683pxcjo2u7.pike.replit.dev';
 const CHAT_URL = `${BASE_URL}/chat`;
 const GOOGLE_AUTH_URL = `${BASE_URL}/auth/google`;
 
-// ====================== Document Variables ======================
+// ====================== DOM Elements ======================
+const mainContent = document.getElementById('main-content');
+const documentsBrowser = document.getElementById('documents-browser');
+const documentGenerator = document.getElementById('document-generator');
+const chatBox = document.getElementById('chat-box');
+const userInput = document.getElementById('user-input');
+const loginButton = document.getElementById('login-button');
+const sendBtn = document.getElementById('send-btn');
+const clearChatBtn = document.getElementById('clear-chat-btn');
+const fetchDocsBtn = document.getElementById('fetch-docs');
+const generateDocBtn = document.getElementById('generate-doc');
+
+// ====================== Global Variables ======================
 let activeCategory = 'all';
-let latestCategoriesData = {};
-
-// ====================== Page Navigation Functions ======================
-// Expose backToHome to global scope for HTML onclick
-window.backToHome = function() {
-  documentsBrowser.style.display = 'none';
-  mainContent.style.display = 'block';
-};
-
-// Show document browser
-function showDocumentsBrowser() {
-  mainContent.style.display = 'none';
-  documentsBrowser.style.display = 'block';
-  renderDocumentsBrowser();
-}
-
-// Render document browser UI
-function renderDocumentsBrowser() {
-  documentsBrowser.innerHTML = `
-    <div class="browser-header">
-      <h1 class="browser-title">Law Sphere - Documents</h1>
-      <button class="back-home-btn" onclick="backToHome()">Back to Home</button>
-    </div>
-    <div id="doc-categories"></div>
-  `;
-  
-  // Initialize Firebase if needed
-  if (typeof firebase === 'undefined' || !firebase.apps.length) {
-    loadFirebaseScripts();
-  } else {
-    fetchDocuments();
-  }
-}
-
-function loadFirebaseScripts() {
-  const script1 = document.createElement('script');
-  script1.src = "https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js";
-  script1.onload = () => {
-    const script2 = document.createElement('script');
-    script2.src = "https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js";
-    script2.onload = () => {
-      if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-      }
-      fetchDocuments();
-    };
-    document.body.appendChild(script2);
-  };
-  document.body.appendChild(script1);
-}
-
-// ====================== Chatbot Functions ======================
-function addMessage(message, isUser = false) {
-  const messageDiv = document.createElement('div');
-  messageDiv.classList.add('message', isUser ? 'user-message' : 'bot-message');
-  messageDiv.textContent = message;
-  chatBox.appendChild(messageDiv);
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-function sendMessage(message = userInput.value.trim()) {
-  if (!message) return;
-  addMessage(message, true);
-  userInput.value = '';
-
-  fetch(CHAT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ message })
-  })
-    .then(response => {
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-      return response.json();
-    })
-    .then(data => {
-      addMessage(data.reply || 'No reply', false);
-      if (data.createDoc) createGoogleDoc(data.reply);
-    })
-    .catch(error => {
-      addMessage('Error: Something went wrong.', false);
-      console.error('Chat Fetch error:', error);
-    });
-}
-
-function createGoogleDoc(content) {
-  fetch(`${BASE_URL}/create-doc`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ content })
-  })
-    .then(res => {
-      if (!res.ok) {
-        if (res.status === 401) throw new Error('Authentication required. Please log in with Google.');
-        throw new Error(`HTTP error! Status: ${res.status}`);
-      }
-      return res.json();
-    })
-    .then(doc => {
-      if (doc.url) {
-        addMessage(`📄 Document created: ${doc.url}`, false);
-      } else {
-        addMessage(`⚠️ Failed to create document.`, false);
-      }
-    })
-    .catch(err => {
-      if (err.message.includes('Authentication required')) {
-        addMessage('Please log in with Google to create documents.', false);
-      } else {
-        addMessage('Failed to create Google Doc.', false);
-      }
-      console.error('Doc Creation error:', err);
-    });
-}
-
-function clearChat() {
-  chatBox.innerHTML = '';
-}
-
-// ====================== Document Functions ======================
-function addDocMessage(message) {
-  const docCategories = document.getElementById('doc-categories');
-  if (!docCategories) return;
-
-  const messageDiv = document.createElement('div');
-  messageDiv.classList.add('message', 'bot-message');
-  messageDiv.textContent = message;
-  docCategories.appendChild(messageDiv);
-}
-
-function fetchDocuments() {
-  const docCategories = document.getElementById('doc-categories');
-  if (!docCategories) return;
-
-  docCategories.innerHTML = '<p class="loading">Loading documents...</p>';
-  const categoriesData = {};
-
-  firebase.firestore().collection('legal_documents')
-    .get()
-    .then((querySnapshot) => {
-      docCategories.innerHTML = '';
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        let category = 'Miscellaneous';
-        const filename = data.title.toLowerCase().replace(/\.pdf$|\.doc$/, '');
-        
-        for (const [cat, { keywords }] of Object.entries(categories)) {
-          if (data.category === cat || keywords.some(k => filename.includes(k))) {
-            category = cat;
-            break;
-          }
-        }
-        
-        if (!categoriesData[category]) categoriesData[category] = [];
-        categoriesData[category].push({ title: filename, url: data.url, desc: `Download ${filename}` });
-      });
-
-      latestCategoriesData = categoriesData;
-
-      // Create category buttons only for categories with documents
-      const categoryBar = document.createElement('div');
-      categoryBar.className = 'category-bar';
-      
-      const allButton = document.createElement('button');
-      allButton.textContent = 'All';
-      allButton.className = 'category-btn';
-      allButton.addEventListener('click', () => switchCategory('all'));
-      categoryBar.appendChild(allButton);
-      
-      const validCategories = Object.keys(categoriesData).filter(cat => categoriesData[cat].length > 0);
-      validCategories.forEach(cat => {
-        const btn = document.createElement('button');
-        btn.textContent = cat;
-        btn.className = 'category-btn';
-        btn.addEventListener('click', () => switchCategory(cat));
-        categoryBar.appendChild(btn);
-      });
-      
-      docCategories.appendChild(categoryBar);
-      switchCategory(activeCategory, categoriesData);
-      addDocMessage(`Fetched ${querySnapshot.size} documents across ${validCategories.length} categories.`);
-    })
-    .catch((error) => {
-      addDocMessage('Error fetching documents: ' + error.message);
-      console.error('Firestore fetch error:', error);
-    });
-}
-
-function switchCategory(category, data = null) {
-  const docCategories = document.getElementById('doc-categories');
-  if (!docCategories) return;
-
-  activeCategory = category;
-  const categoriesData = data || latestCategoriesData;
-
-  // Remove old category content (but keep the category bar and messages)
-  const oldContent = docCategories.querySelector('.category-content');
-  if (oldContent) oldContent.remove();
-
-  // Update active state on category buttons
-  docCategories.querySelectorAll('.category-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.textContent === category || (category === 'all' && btn.textContent === 'All'));
-  });
-
-  // Build new content
-  const content = document.createElement('div');
-  content.className = 'category-content';
-  
-  const displayCategories = category === 'all'
-    ? Object.entries(categoriesData)
-    : [[category, categoriesData[category]]];
-
-  displayCategories.forEach(([cat, docs]) => {
-    if (categoriesData[cat]?.length > 0) {
-      const catDiv = document.createElement('div');
-      catDiv.className = 'category-section';
-      catDiv.innerHTML = `<h2>${cat}</h2>`; // No question mark after category
-      
-      const table = document.createElement('table');
-      table.className = 'doc-table';
-      
-      docs.forEach(doc => {
-        const row = table.insertRow();
-        const cellTitle = row.insertCell(0);
-        const cellDesc = row.insertCell(1);
-        
-        cellTitle.textContent = doc.title; // No icons
-        cellDesc.textContent = doc.desc;
-        
-        cellTitle.className = 'doc-title';
-        cellDesc.className = 'doc-desc';
-        
-        row.addEventListener('click', () => downloadFile(doc.url, doc.title + '.pdf'));
-      });
-      
-      catDiv.appendChild(table);
-      content.appendChild(catDiv);
-    }
-  });
-
-  // Append the new content after the category bar (and after any messages)
-  const bar = docCategories.querySelector('.category-bar');
-  if (bar) {
-    let insertAfter = bar;
-    let next = insertAfter.nextSibling;
-    while (next && next.classList && next.classList.contains('bot-message')) {
-      insertAfter = next;
-      next = insertAfter.nextSibling;
-    }
-    insertAfter.parentNode.insertBefore(content, insertAfter.nextSibling);
-  } else {
-    docCategories.appendChild(content);
-  }
-}
-
-function downloadFile(url, filename) {
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
+let categoriesData = {};
 
 // ====================== Event Listeners ======================
 document.addEventListener('DOMContentLoaded', function() {
-  // Chat event listeners
-  if (sendBtn) sendBtn.addEventListener('click', () => sendMessage());
+  // Initialize Firebase
+  if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(firebaseConfig);
+  }
+  
+  // Chat Functionality
+  if (sendBtn) sendBtn.addEventListener('click', sendMessage);
   if (clearChatBtn) clearChatBtn.addEventListener('click', clearChat);
   if (userInput) {
     userInput.addEventListener('keypress', (e) => {
@@ -320,14 +46,23 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Login
+  // Document Buttons
+  if (fetchDocsBtn) {
+    fetchDocsBtn.addEventListener('click', showDocumentsBrowser);
+  }
+  
+  if (generateDocBtn) {
+    generateDocBtn.addEventListener('click', showDocumentGenerator);
+  }
+  
+  // Login Button
   if (loginButton) {
     loginButton.addEventListener('click', () => {
       window.location.href = GOOGLE_AUTH_URL;
     });
   }
-
-  // Quick question buttons
+  
+  // Quick Questions
   document.querySelectorAll('.quick-question').forEach(button => {
     button.addEventListener('click', () => {
       const message = button.getAttribute('data-message');
@@ -335,12 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
   
-  // Fetch documents button
-  if (fetchDocsBtn) {
-    fetchDocsBtn.addEventListener('click', showDocumentsBrowser);
-  }
-  
-  // Smooth scroll for navbar
+  // Navbar Smooth Scroll
   document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', function(e) {
       const href = this.getAttribute('href');
@@ -353,3 +83,454 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 });
+
+// ====================== Document Browser Functions ======================
+function showDocumentsBrowser() {
+  // Create full document browser layout that replaces entire page
+  const browserHTML = `
+    <div class="documents-container">
+      <div class="document-header">
+        <div class="document-header-actions">
+          <div class="browse-btn active">Browse Documents</div>
+          <div class="generate-btn" id="generate-doc-btn">Generate Document</div>
+        </div>
+        <div class="back-btn" id="back-home-btn">Back to Home</div>
+      </div>
+      
+      <div class="category-tabs" id="category-tabs">
+        <button class="category-tab active" data-category="all">All</button>
+      </div>
+      
+      <div id="document-content"></div>
+    </div>
+  `;
+  
+  // Hide main content and show document browser
+  mainContent.style.display = 'none';
+  documentsBrowser.style.display = 'block';
+  documentsBrowser.innerHTML = browserHTML;
+  
+  // Set up event listeners
+  document.getElementById('back-home-btn').addEventListener('click', backToHome);
+  document.getElementById('generate-doc-btn').addEventListener('click', showDocumentGenerator);
+  
+  // Load documents
+  loadDocuments();
+}
+
+function backToHome() {
+  documentsBrowser.style.display = 'none';
+  documentGenerator.style.display = 'none';
+  mainContent.style.display = 'block';
+}
+
+function loadDocuments() {
+  const documentContent = document.getElementById('document-content');
+  const categoryTabs = document.getElementById('category-tabs');
+  
+  documentContent.innerHTML = '<p style="text-align: center; padding: 20px;">Loading documents...</p>';
+  
+  // Initialize Firebase if needed
+  if (typeof firebase === 'undefined') {
+    const script = document.createElement('script');
+    script.src = "https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js";
+    script.onload = () => {
+      const firestoreScript = document.createElement('script');
+      firestoreScript.src = "https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js";
+      firestoreScript.onload = () => {
+        firebase.initializeApp(firebaseConfig);
+        fetchDocuments(documentContent, categoryTabs);
+      };
+      document.body.appendChild(firestoreScript);
+    };
+    document.body.appendChild(script);
+  } else {
+    fetchDocuments(documentContent, categoryTabs);
+  }
+}
+
+function fetchDocuments(documentContent, categoryTabs) {
+  categoriesData = {};
+  
+  firebase.firestore().collection('legal_documents')
+    .get()
+    .then((querySnapshot) => {
+      // Process documents
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const title = data.title.replace(/\.pdf$|\.doc$/, '');
+        
+        // Determine category
+        const category = determineCategory(title, data.category);
+        
+        if (!categoriesData[category]) {
+          categoriesData[category] = [];
+        }
+        
+        categoriesData[category].push({
+          title: title,
+          url: data.url
+        });
+      });
+      
+      // Create category tabs
+      const allCategories = Object.keys(categoriesData).sort();
+      
+      // Remove existing tabs except "All"
+      const tabs = categoryTabs.querySelectorAll('.category-tab:not([data-category="all"])');
+      tabs.forEach(tab => tab.remove());
+      
+      // Add category tabs
+      allCategories.forEach(category => {
+        const tab = document.createElement('button');
+        tab.className = 'category-tab';
+        tab.textContent = category;
+        tab.dataset.category = category;
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          displayDocumentsByCategory(category, documentContent);
+        });
+        categoryTabs.appendChild(tab);
+      });
+      
+      // Display all documents initially
+      displayDocumentsByCategory('all', documentContent);
+      
+      // Add success message
+      const totalDocs = Object.values(categoriesData).reduce((acc, docs) => acc + docs.length, 0);
+      const messageElement = document.createElement('div');
+      messageElement.className = 'bot-message';
+      messageElement.textContent = `Fetched ${totalDocs} documents across ${allCategories.length} categories.`;
+      documentContent.prepend(messageElement);
+    })
+    .catch((error) => {
+      documentContent.innerHTML = `<p style="text-align: center; color: red; padding: 20px;">Error loading documents: ${error.message}</p>`;
+      console.error('Firestore error:', error);
+    });
+}
+
+function determineCategory(title, existingCategory) {
+  const categories = {
+    'Form': ['form', 'application', 'declaration', 'nomination', 'certificate', 'letter'],
+    'Bank Documents': ['bank', 'account', 'nach', 'statement', 'transfer'],
+    'Legal Documents': ['legal', 'affidavit', 'power of attorney', 'agreement', 'contract'],
+    'Address Proof': ['address', 'residence', 'utility', 'rent']
+  };
+  
+  if (existingCategory && Object.keys(categories).includes(existingCategory)) {
+    return existingCategory;
+  }
+  
+  const lowercaseTitle = title.toLowerCase();
+  
+  for (const [category, keywords] of Object.entries(categories)) {
+    if (keywords.some(keyword => lowercaseTitle.includes(keyword))) {
+      return category;
+    }
+  }
+  
+  return 'Miscellaneous';
+}
+
+function displayDocumentsByCategory(category, contentElement) {
+  contentElement.innerHTML = '';
+  
+  if (category === 'all') {
+    // Display all categories
+    Object.entries(categoriesData).forEach(([cat, documents]) => {
+      if (documents.length > 0) {
+        const categoryElement = createCategoryElement(cat, documents);
+        contentElement.appendChild(categoryElement);
+      }
+    });
+  } else {
+    // Display only selected category
+    if (categoriesData[category] && categoriesData[category].length > 0) {
+      const categoryElement = createCategoryElement(category, categoriesData[category]);
+      contentElement.appendChild(categoryElement);
+    } else {
+      contentElement.innerHTML = '<p style="text-align: center; padding: 20px;">No documents found in this category.</p>';
+    }
+  }
+}
+
+function createCategoryElement(category, documents) {
+  const categoryDiv = document.createElement('div');
+  categoryDiv.className = 'document-category';
+  
+  const categoryTitle = document.createElement('h2');
+  categoryTitle.className = 'document-category-title';
+  categoryTitle.textContent = category; // No (?) symbol
+  categoryDiv.appendChild(categoryTitle);
+  
+  const documentsList = document.createElement('div');
+  documentsList.className = 'document-list';
+  
+  documents.forEach(doc => {
+    const docItem = document.createElement('div');
+    docItem.className = 'document-item';
+    docItem.innerHTML = `
+      <div class="document-title">${doc.title}</div>
+      <div class="document-action">Download ${doc.title}</div>
+    `;
+    docItem.addEventListener('click', () => downloadDocument(doc.url, doc.title));
+    documentsList.appendChild(docItem);
+  });
+  
+  categoryDiv.appendChild(documentsList);
+  return categoryDiv;
+}
+
+function downloadDocument(url, filename) {
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${filename}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// ====================== Document Generator Functions ======================
+function showDocumentGenerator() {
+  console.log("Document generator functionality not yet implemented");
+  alert("Document generator coming soon!");
+}
+
+// ====================== Chatbot Functions ======================
+function sendMessage(message) {
+  const userMessage = message || userInput?.value?.trim();
+  if (!userMessage) return;
+  
+  // Add user message to UI
+  addMessage(userMessage, true);
+  
+  // Clear input
+  if (userInput) userInput.value = '';
+  
+  // Send to API
+  fetch(CHAT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ message: userMessage })
+  })
+    .then(response => {
+      if (!response.ok) throw new Error(`Error: ${response.status}`);
+      return response.json();
+    })
+    .then(data => {
+      addMessage(data.reply || 'No response', false);
+    })
+    .catch(error => {
+      console.error('Chat error:', error);
+      addMessage('Sorry, there was an error processing your request.', false);
+    });
+}
+
+function addMessage(text, isUser) {
+  if (!chatBox) return;
+  
+  const messageDiv = document.createElement('div');
+  messageDiv.className = isUser ? 'message user-message' : 'message bot-message';
+  messageDiv.textContent = text;
+  
+  chatBox.appendChild(messageDiv);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function clearChat() {
+  if (chatBox) chatBox.innerHTML = '';
+}
+// Document Generator Functions ======================
+let currentDocument = null;
+let documentQuestions = [];
+let documentResponses = {};
+let currentQuestionIndex = 0;
+
+async function showDocumentGenerator() {
+  mainContent.style.display = 'none';
+  documentsBrowser.style.display = 'none';
+  documentGenerator.style.display = 'block';
+  
+  // Create generator UI
+  documentGenerator.innerHTML = `
+    <div class="generator-container">
+      <div class="generator-header">
+        <h2>AI Document Generator</h2>
+        <button class="back-home-btn" onclick="backToHome()">Back to Home</button>
+      </div>
+      
+      <div class="generator-steps">
+        <div id="template-selection" class="step active">
+          <h3>1. Select Document Template</h3>
+          <div class="template-grid" id="template-grid"></div>
+        </div>
+        
+        <div id="questionnaire" class="step">
+          <h3>2. Answer Questions</h3>
+          <div id="questions-container"></div>
+          <div class="question-nav">
+            <button id="prev-question">Previous</button>
+            <button id="next-question">Next</button>
+          </div>
+        </div>
+        
+        <div id="document-preview" class="step">
+          <h3>3. Preview & Download</h3>
+          <div id="preview-content"></div>
+          <button id="download-doc">Download Document</button>
+          <button id="start-over">Start Over</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  await loadTemplates();
+  setupGeneratorEventListeners();
+}
+
+async function loadTemplates() {
+  const templateGrid = document.getElementById('template-grid');
+  templateGrid.innerHTML = '<div class="loading">Loading templates...</div>';
+  
+  try {
+    const querySnapshot = await firebase.firestore().collection('legal_documents').get();
+    templateGrid.innerHTML = '';
+    
+    querySnapshot.forEach(doc => {
+      const template = doc.data();
+      const templateCard = document.createElement('div');
+      templateCard.className = 'template-card';
+      templateCard.innerHTML = `
+        <h4>${template.title}</h4>
+        <p>${template.description || 'Legal document template'}</p>
+      `;
+      templateCard.addEventListener('click', () => selectTemplate(template.title));
+      templateGrid.appendChild(templateCard);
+    });
+  } catch (error) {
+    templateGrid.innerHTML = '<div class="error">Error loading templates</div>';
+  }
+}
+
+async function selectTemplate(templateTitle) {
+  currentDocument = templateTitle;
+  document.querySelector('#template-selection').classList.remove('active');
+  document.querySelector('#questionnaire').classList.add('active');
+  
+  try {
+    const response = await fetch(`${BASE_URL}/get-document-questions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ documentTitle: templateTitle })
+    });
+    
+    const data = await response.json();
+    documentQuestions = data.questions;
+    renderQuestions();
+  } catch (error) {
+    alert('Error loading questions');
+  }
+}
+
+function renderQuestions() {
+  const container = document.getElementById('questions-container');
+  container.innerHTML = '';
+  
+  documentQuestions.forEach((question, index) => {
+    const questionDiv = document.createElement('div');
+    questionDiv.className = `question ${index === 0 ? 'active' : ''}`;
+    questionDiv.innerHTML = `
+      <label>${question.question}</label>
+      <input type="text" id="q-${question.id}" 
+             data-field="${question.fieldName}" 
+             ${question.required ? 'required' : ''}>
+    `;
+    container.appendChild(questionDiv);
+  });
+}
+
+function setupGeneratorEventListeners() {
+  // Navigation handlers
+  document.getElementById('prev-question').addEventListener('click', () => {
+    if (currentQuestionIndex > 0) {
+      documentQuestions[currentQuestionIndex].classList.remove('active');
+      currentQuestionIndex--;
+      documentQuestions[currentQuestionIndex].classList.add('active');
+    }
+  });
+
+  document.getElementById('next-question').addEventListener('click', async () => {
+    // Save response
+    const currentQuestion = documentQuestions[currentQuestionIndex];
+    const input = currentQuestion.querySelector('input');
+    documentResponses[input.dataset.field] = input.value;
+
+    if (currentQuestionIndex < documentQuestions.length - 1) {
+      currentQuestion.classList.remove('active');
+      currentQuestionIndex++;
+      documentQuestions[currentQuestionIndex].classList.add('active');
+    } else {
+      await generateDocument();
+    }
+  });
+
+  // Document download handler
+  document.getElementById('download-doc').addEventListener('click', () => {
+    const pdfData = document.getElementById('download-doc').dataset.pdf;
+    const blob = b64toBlob(pdfData, 'application/pdf');
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${currentDocument}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+}
+
+async function generateDocument() {
+  try {
+    const response = await fetch(`${BASE_URL}/generate-filled-document`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        documentTitle: currentDocument,
+        responses: documentResponses
+      })
+    });
+
+    const data = await response.json();
+    document.querySelector('#questionnaire').classList.remove('active');
+    document.querySelector('#document-preview').classList.add('active');
+    
+    document.getElementById('preview-content').innerHTML = 
+      data.documentContent.replace(/\n/g, '<br>');
+    document.getElementById('download-doc').dataset.pdf = data.pdfBase64;
+  } catch (error) {
+    alert('Error generating document');
+  }
+}
+
+// Helper function
+function b64toBlob(b64Data, contentType, sliceSize = 512) {
+  const byteCharacters = atob(b64Data);
+  const byteArrays = [];
+
+  for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+    const slice = byteCharacters.slice(offset, offset + sliceSize);
+    const byteNumbers = new Array(slice.length);
+    
+    for (let i = 0; i < slice.length; i++) {
+      byteNumbers[i] = slice.charCodeAt(i);
+    }
+    
+    const byteArray = new Uint8Array(byteNumbers);
+    byteArrays.push(byteArray);
+  }
+
+  return new Blob(byteArrays, { type: contentType });
+}
