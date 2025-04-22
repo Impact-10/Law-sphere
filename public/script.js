@@ -17,6 +17,7 @@ const sendBtn = document.getElementById('send-btn');
 const clearChatBtn = document.getElementById('clear-chat-btn');
 const fetchDocsBtn = document.getElementById('fetch-docs');
 const generateDocBtn = document.getElementById('generate-doc');
+const docCategories = document.getElementById('doc-categories');
 
 // ====================== Global Variables ======================
 let activeCategory = 'all';
@@ -29,57 +30,53 @@ let documentResponses = {};
 let currentQuestionIndex = 0;
 
 // ====================== Firebase Initialization ======================
-if (!window.firebase.apps.length) {
+if (!window.firebase?.apps?.length) {
   window.firebase.initializeApp(firebaseConfig);
 }
 const db = window.firebase.firestore();
 
 // ====================== Event Listeners ======================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
   // Chat Functionality
-  if (sendBtn) sendBtn.addEventListener('click', () => sendMessage());
-  if (clearChatBtn) clearChatBtn.addEventListener('click', clearChat);
-  if (userInput) {
-    userInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendMessage();
-    });
-  }
-
-  // Document Buttons
-  if (fetchDocsBtn) fetchDocsBtn.addEventListener('click', showDocumentsBrowser);
-  if (generateDocBtn) generateDocBtn.addEventListener('click', showDocumentGenerator);
-
-  // Login Button
-  if (loginButton) {
-    loginButton.addEventListener('click', () => {
-      window.location.href = GOOGLE_AUTH_URL;
-    });
-  }
+  sendBtn?.addEventListener('click', () => sendMessage());
+  clearChatBtn?.addEventListener('click', clearChat);
+  userInput?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+  });
 
   // Quick Questions
-  document.querySelectorAll('.quick-question').forEach(button => {
+  document.querySelectorAll('.quick-question')?.forEach(button => {
     button.addEventListener('click', () => {
       const message = button.getAttribute('data-message');
       sendMessage(message);
     });
   });
 
+  // Document Buttons
+  fetchDocsBtn?.addEventListener('click', showDocumentsBrowser);
+  generateDocBtn?.addEventListener('click', showDocumentGenerator);
+
+  // Login Button
+  loginButton?.addEventListener('click', () => {
+    window.location.href = GOOGLE_AUTH_URL;
+  });
+
   // Navbar Smooth Scroll
-  document.querySelectorAll('.nav-link').forEach(link => {
-    link.addEventListener('click', function(e) {
-      const href = this.getAttribute('href');
+  document.querySelectorAll('.nav-link')?.forEach(link => {
+    link.addEventListener('click', (e) => {
+      const href = link.getAttribute('href');
       if (href.startsWith('#')) {
         e.preventDefault();
         document.querySelector(href).scrollIntoView({ behavior: 'smooth' });
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        this.classList.add('active');
+        link.classList.add('active');
       }
     });
   });
 });
 
 // ====================== Chatbot Functions ======================
-function sendMessage(message = userInput.value.trim()) {
+function sendMessage(message = userInput?.value?.trim()) {
   if (!message) return;
   addMessage(message, true);
   userInput.value = '';
@@ -117,7 +114,10 @@ function clearChat() {
 
 // ====================== Document Browser Functions ======================
 function showDocumentsBrowser() {
-  // Create full document browser layout that replaces entire page
+  mainContent.style.display = 'none';
+  documentGenerator.style.display = 'none';
+  documentsBrowser.style.display = 'block';
+
   const browserHTML = `
     <div class="documents-container">
       <div class="document-header">
@@ -134,16 +134,11 @@ function showDocumentsBrowser() {
     </div>
   `;
 
-  mainContent.style.display = 'none';
-  documentGenerator.style.display = 'none';
-  documentsBrowser.style.display = 'block';
   documentsBrowser.innerHTML = browserHTML;
 
-  // Set up event listeners for dynamic buttons
   document.getElementById('back-home-btn').addEventListener('click', backToHome);
   document.getElementById('generate-doc-btn').addEventListener('click', showDocumentGenerator);
 
-  // Load documents
   loadDocuments();
 }
 
@@ -176,10 +171,6 @@ function loadDocuments() {
 
       // Create category tabs
       const allCategories = Object.keys(categoriesData).sort();
-      // Remove existing tabs except "All"
-      const tabs = categoryTabs.querySelectorAll('.category-tab:not([data-category="all"])');
-      tabs.forEach(tab => tab.remove());
-      // Add category tabs
       allCategories.forEach(category => {
         const tab = document.createElement('button');
         tab.className = 'category-tab';
@@ -286,29 +277,33 @@ async function showDocumentGenerator() {
   documentGenerator.style.display = 'block';
 
   documentGenerator.innerHTML = `
-    <div class="generator-container">
-      <div class="generator-header">
-        <h2>AI Document Generator</h2>
-        <button class="back-home-btn" id="back-home-gen-btn">Back to Home</button>
+    <div class="generator-header">
+      <h1 class="generator-title">Document Generation</h1>
+      <button class="back-home-btn" id="back-home-gen-btn">Back to Home</button>
+    </div>
+    <div class="generator-content">
+      <div id="doc-selection" class="generator-section">
+        <h2>1. Select Document Template</h2>
+        <p>Choose a document template from our library to get started.</p>
+        <div id="template-list" class="template-grid"></div>
       </div>
-      <div class="generator-steps">
-        <div id="template-selection" class="step active">
-          <h3>1. Select Document Template</h3>
-          <div class="template-grid" id="template-grid"></div>
+      <div id="doc-questionnaire" class="generator-section" style="display:none;">
+        <h2>2. Fill Document Information</h2>
+        <p>Please answer the following questions to generate your document.</p>
+        <div id="questions-container"></div>
+        <div class="questionnaire-actions">
+          <button id="prev-question" class="nav-btn">Previous</button>
+          <button id="next-question" class="nav-btn">Next</button>
+          <button id="generate-final" class="generate-btn" style="display:none;">Generate Document</button>
         </div>
-        <div id="questionnaire" class="step">
-          <h3>2. Answer Questions</h3>
-          <div id="questions-container"></div>
-          <div class="question-nav">
-            <button id="prev-question">Previous</button>
-            <button id="next-question">Next</button>
-          </div>
-        </div>
-        <div id="document-preview" class="step">
-          <h3>3. Preview & Download</h3>
-          <div id="preview-content"></div>
-          <button id="download-doc">Download Document</button>
-          <button id="start-over">Start Over</button>
+      </div>
+      <div id="doc-preview" class="generator-section" style="display:none;">
+        <h2>3. Document Preview</h2>
+        <p>Your document has been generated. Review it and download when ready.</p>
+        <div id="preview-container" class="preview-box"></div>
+        <div class="preview-actions">
+          <button id="download-doc" class="download-btn">Download Document</button>
+          <button id="start-over" class="nav-btn">Start Over</button>
         </div>
       </div>
     </div>
@@ -321,31 +316,32 @@ async function showDocumentGenerator() {
 }
 
 async function loadTemplates() {
-  const templateGrid = document.getElementById('template-grid');
-  templateGrid.innerHTML = '<div class="loading">Loading templates...</div>';
+  const templateList = document.getElementById('template-list');
+  templateList.innerHTML = '<div class="loading">Loading templates...</div>';
   try {
     const querySnapshot = await db.collection('legal_documents').get();
-    templateGrid.innerHTML = '';
+    templateList.innerHTML = '';
     querySnapshot.forEach(doc => {
       const template = doc.data();
       const templateCard = document.createElement('div');
       templateCard.className = 'template-card';
       templateCard.innerHTML = `
-        <h4>${template.title}</h4>
-        <p>${template.description || 'Legal document template'}</p>
+        <h4 class="template-title">${template.title.replace(/\.pdf$|\.doc$/, '')}</h4>
+        <p class="template-desc">${template.description || 'Legal document template'}</p>
       `;
       templateCard.addEventListener('click', () => selectTemplate(template.title));
-      templateGrid.appendChild(templateCard);
+      templateList.appendChild(templateCard);
     });
   } catch (error) {
-    templateGrid.innerHTML = '<div class="error">Error loading templates</div>';
+    templateList.innerHTML = '<div class="error">Error loading templates</div>';
+    console.error('Template load error:', error);
   }
 }
 
 async function selectTemplate(templateTitle) {
   currentDocument = templateTitle;
-  document.querySelector('#template-selection').classList.remove('active');
-  document.querySelector('#questionnaire').classList.add('active');
+  document.getElementById('doc-selection').classList.remove('active');
+  document.getElementById('doc-questionnaire').classList.add('active');
   currentQuestionIndex = 0;
   documentResponses = {};
   try {
@@ -354,11 +350,13 @@ async function selectTemplate(templateTitle) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ documentTitle: templateTitle })
     });
+    if (!response.ok) throw new Error('Failed to fetch questions');
     const data = await response.json();
-    documentQuestions = data.questions;
+    documentQuestions = data.questions || [];
     renderQuestions();
   } catch (error) {
-    alert('Error loading questions');
+    alert('Error loading questions: ' + error.message);
+    console.error('Question fetch error:', error);
   }
 }
 
@@ -367,32 +365,35 @@ function renderQuestions() {
   container.innerHTML = '';
   documentQuestions.forEach((question, index) => {
     const questionDiv = document.createElement('div');
-    questionDiv.className = `question${index === 0 ? ' active' : ''}`;
+    questionDiv.className = `question ${index === 0 ? 'active' : ''}`;
     questionDiv.innerHTML = `
       <label>${question.question}</label>
-      <input type="text" id="q-${question.id}" 
-             data-field="${question.fieldName}" 
-             ${question.required ? 'required' : ''}>
+      <input type="text" id="q-${question.id}" data-field="${question.fieldName}" ${question.required ? 'required' : ''}>
     `;
     container.appendChild(questionDiv);
   });
+  setupQuestionNavigation();
 }
 
-function setupGeneratorEventListeners() {
-  document.getElementById('prev-question').addEventListener('click', () => {
-    const questions = document.querySelectorAll('.question');
+function setupQuestionNavigation() {
+  const prevButton = document.getElementById('prev-question');
+  const nextButton = document.getElementById('next-question');
+  const generateButton = document.getElementById('generate-final');
+
+  prevButton.addEventListener('click', () => {
     if (currentQuestionIndex > 0) {
-      questions[currentQuestionIndex].classList.remove('active');
+      document.querySelectorAll('.question')[currentQuestionIndex].classList.remove('active');
       currentQuestionIndex--;
-      questions[currentQuestionIndex].classList.add('active');
+      document.querySelectorAll('.question')[currentQuestionIndex].classList.add('active');
     }
   });
 
-  document.getElementById('next-question').addEventListener('click', async () => {
+  nextButton.addEventListener('click', async () => {
     const questions = document.querySelectorAll('.question');
     const currentQuestion = questions[currentQuestionIndex];
     const input = currentQuestion.querySelector('input');
     documentResponses[input.dataset.field] = input.value;
+
     if (currentQuestionIndex < documentQuestions.length - 1) {
       currentQuestion.classList.remove('active');
       currentQuestionIndex++;
@@ -402,28 +403,8 @@ function setupGeneratorEventListeners() {
     }
   });
 
-  document.getElementById('start-over').addEventListener('click', () => {
-    document.querySelector('#template-selection').classList.add('active');
-    document.querySelector('#questionnaire').classList.remove('active');
-    document.querySelector('#document-preview').classList.remove('active');
-    currentDocument = null;
-    documentQuestions = [];
-    documentResponses = {};
-    currentQuestionIndex = 0;
-    loadTemplates();
-  });
-
-  document.getElementById('download-doc').addEventListener('click', () => {
-    const pdfData = document.getElementById('download-doc').dataset.pdf;
-    const blob = b64toBlob(pdfData, 'application/pdf');
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${currentDocument}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  generateButton.addEventListener('click', async () => {
+    await generateDocument();
   });
 }
 
@@ -437,15 +418,46 @@ async function generateDocument() {
         responses: documentResponses
       })
     });
+    if (!response.ok) throw new Error('Failed to generate document');
     const data = await response.json();
-    document.querySelector('#questionnaire').classList.remove('active');
-    document.querySelector('#document-preview').classList.add('active');
-    document.getElementById('preview-content').innerHTML = 
-      data.documentContent.replace(/\n/g, '<br>');
-    document.getElementById('download-doc').dataset.pdf = data.pdfBase64;
+    document.getElementById('doc-questionnaire').classList.remove('active');
+    document.getElementById('doc-preview').classList.add('active');
+    document.getElementById('preview-container').innerHTML = data.documentContent.replace(/\n/g, '<br>');
+    document.getElementById('download-doc').dataset.pdf = data.pdfBase64 || '';
   } catch (error) {
-    alert('Error generating document');
+    alert('Error generating document: ' + error.message);
+    console.error('Generation error:', error);
   }
+}
+
+function setupGeneratorEventListeners() {
+  document.getElementById('download-doc')?.addEventListener('click', () => {
+    const pdfData = document.getElementById('download-doc').dataset.pdf;
+    if (pdfData) {
+      const blob = b64toBlob(pdfData, 'application/pdf');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${currentDocument}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      alert('No PDF data available for download.');
+    }
+  });
+
+  document.getElementById('start-over')?.addEventListener('click', () => {
+    document.getElementById('doc-selection').classList.add('active');
+    document.getElementById('doc-questionnaire').classList.remove('active');
+    document.getElementById('doc-preview').classList.remove('active');
+    currentDocument = null;
+    documentQuestions = [];
+    documentResponses = {};
+    currentQuestionIndex = 0;
+    loadTemplates();
+  });
 }
 
 function b64toBlob(b64Data, contentType = '', sliceSize = 512) {
