@@ -137,7 +137,13 @@
     <div class="generator-content">
       <div id="doc-selection" class="generator-section">
         <h2>1. Select Document</h2>
-        <p>Click a document to generate it with AI assistance.</p>
+        <p>Upload a document or select one from the list to generate it with AI assistance.</p>
+        <!-- Add file upload option -->
+        <div class="upload-section">
+          <label for="upload-pdf" class="upload-btn">Upload PDF</label>
+          <input type="file" id="upload-pdf" accept="application/pdf" style="display:none;" />
+          <p id="uploaded-file-name">No file selected</p>
+        </div>
         <div class="category-tabs" id="gen-category-tabs">
           <button class="category-tab active" data-category="all">All</button>
         </div>
@@ -155,7 +161,7 @@
       </div>
       <div id="doc-preview" class="generator-section" style="display:none;">
         <h2>3. Document Preview</h2>
-        <p>Your document is ready. Download it below.</p>
+        <p id="preview-message">Your document is ready. Download it below.</p>
         <div id="preview-container" class="preview-box"></div>
         <div class="preview-actions">
           <button id="download-doc" class="download-btn">Download Document</button>
@@ -208,6 +214,7 @@
 
     // Document Generator State
     let selectedDocumentTitle = null;
+    let selectedDocumentFile = null; // Store the user-uploaded or selected PDF file
     let documentQuestions = [];
     let documentResponses = {};
     let currentQuestionIndex = 0;
@@ -344,6 +351,7 @@
 
     function resetDocumentGeneratorState() {
       selectedDocumentTitle = null;
+      selectedDocumentFile = null; // Reset the selected file
       documentQuestions = [];
       documentResponses = {};
       currentQuestionIndex = 0;
@@ -431,7 +439,7 @@
         });
       } else {
         if (categoriesData[category] && categoriesData[category].length > 0) {
-          const categoryElement = createCategoryElement(category, categoriesData[category]); // Fixed: Use categoriesData[category]
+          const categoryElement = createCategoryElement(category, categoriesData[category]);
           contentElement.appendChild(categoryElement);
         } else {
           contentElement.innerHTML = '<p style="text-align: center; padding: 20px;">No documents found in this category.</p>';
@@ -453,9 +461,13 @@
         docItem.className = 'document-item';
         docItem.innerHTML = `
           <div class="document-title">${doc.displayTitle}</div>
-          <div class="document-action">Download ${doc.displayTitle}</div>
+          <div class="document-actions">
+            <button class="document-action download-btn">Download</button>
+            <button class="document-action use-btn">Use for Generation</button>
+          </div>
         `;
-        docItem.addEventListener('click', () => downloadDocument(doc.url, doc.displayTitle));
+        docItem.querySelector('.download-btn').addEventListener('click', () => downloadDocument(doc.url, doc.displayTitle));
+        docItem.querySelector('.use-btn').addEventListener('click', () => useDocumentForGeneration(doc.url, doc.displayTitle));
         documentsList.appendChild(docItem);
       });
       categoryDiv.appendChild(documentsList);
@@ -469,6 +481,33 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    }
+
+    async function useDocumentForGeneration(url, displayTitle) {
+      try {
+        // Fetch the PDF file from the URL
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
+        const blob = await response.blob();
+        const file = new File([blob], `${displayTitle}.pdf`, { type: 'application/pdf' });
+        
+        // Switch to the document generator section
+        showDocumentGenerator();
+        
+        // Set the selected file and title
+        selectedDocumentTitle = displayTitle;
+        selectedDocumentFile = file;
+        document.getElementById('uploaded-file-name').textContent = file.name;
+        
+        // Proceed to the chat section
+        document.getElementById('doc-selection').style.display = 'none';
+        document.getElementById('doc-chat').style.display = 'block';
+        await fetchTemplate();
+        fetchQuestions();
+      } catch (error) {
+        console.error('Error using document for generation:', error);
+        alert('Failed to load the document. Please try again.');
+      }
     }
 
     // ====================== Document Generator Functions ======================
@@ -485,7 +524,12 @@
         <div class="generator-content">
           <div id="doc-selection" class="generator-section">
             <h2>1. Select Document</h2>
-            <p>Click a document to generate it with AI assistance.</p>
+            <p>Upload a document or select one from the list to generate it with AI assistance.</p>
+            <div class="upload-section">
+              <label for="upload-pdf" class="upload-btn">Upload PDF</label>
+              <input type="file" id="upload-pdf" accept="application/pdf" style="display:none;" />
+              <p id="uploaded-file-name">No file selected</p>
+            </div>
             <div class="category-tabs" id="gen-category-tabs">
               <button class="category-tab active" data-category="all">All</button>
             </div>
@@ -590,9 +634,9 @@
               docItem.className = 'template-card';
               docItem.innerHTML = `
                 <div class="template-title">${doc.displayTitle}</div>
-                <div class="template-desc">Click to generate</div>
+                <div class="template-desc">Click to use for generation</div>
               `;
-              docItem.addEventListener('click', () => selectGenDocument(doc.title, doc.url));
+              docItem.addEventListener('click', () => useDocumentForGeneration(doc.url, doc.displayTitle));
               documentsList.appendChild(docItem);
             });
             categoryDiv.appendChild(documentsList);
@@ -608,9 +652,9 @@
             docItem.className = 'template-card';
             docItem.innerHTML = `
               <div class="template-title">${doc.displayTitle}</div>
-              <div class="template-desc">Click to generate</div>
+              <div class="template-desc">Click to use for generation</div>
             `;
-            docItem.addEventListener('click', () => selectGenDocument(doc.title, doc.url));
+            docItem.addEventListener('click', () => useDocumentForGeneration(doc.url, doc.displayTitle));
             documentsList.appendChild(docItem);
           });
           contentElement.appendChild(documentsList);
@@ -620,27 +664,24 @@
       }
     }
 
-    async function selectGenDocument(title, url) {
-      selectedDocumentTitle = title;
-      document.getElementById('doc-selection').style.display = 'none';
-      document.getElementById('doc-chat').style.display = 'block';
-      documentQuestions = [];
-      documentResponses = {};
-      currentQuestionIndex = 0;
-      document.getElementById('chat-box-gen').innerHTML = '';
+    async function fetchTemplate() {
+      if (!selectedDocumentFile) {
+        addChatMessage('Error: No document selected or uploaded.', false);
+        document.getElementById('doc-chat').style.display = 'none';
+        document.getElementById('doc-selection').style.display = 'block';
+        return;
+      }
 
-      // Fetch the template structure from the backend
-      await fetchTemplate(title, url);
-      fetchQuestions();
-    }
-
-    async function fetchTemplate(title, url) {
       try {
+        const formData = new FormData();
+        formData.append('documentTitle', selectedDocumentTitle);
+        formData.append('pdfFile', selectedDocumentFile);
+
         const response = await fetch(GET_TEMPLATE_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ documentTitle: title, documentUrl: url })
+          body: formData
         });
+
         if (!response.ok) throw new Error(`Failed to fetch template: ${response.status}`);
         const data = await response.json();
         documentTemplate = data.template || null;
@@ -648,10 +689,9 @@
           question: `Please provide the ${field.label || field.name}?`,
           fieldName: field.name
         }));
-      } catch (error) { // Fixed: Removed erroneous "33"
+      } catch (error) {
         console.error('Template fetch error:', error);
-        addChatMessage(`Error: Failed to fetch template - ${error.message}`, false);
-        // Fallback to a generic template
+        addChatMessage(`Error: Unable to fetch the template for this document. Using a default template instead.`, false);
         documentTemplate = null;
         documentQuestions = [
           { question: "What is your full name?", fieldName: "fullName" },
@@ -756,6 +796,27 @@
     }
 
     function setupGeneratorEventListeners() {
+      // Handle file upload
+      const uploadInput = document.getElementById('upload-pdf');
+      const uploadedFileName = document.getElementById('uploaded-file-name');
+      uploadInput?.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          selectedDocumentFile = file;
+          selectedDocumentTitle = file.name.replace(/\.pdf$|\.doc$/, '');
+          uploadedFileName.textContent = file.name;
+          
+          // Proceed to the chat section
+          document.getElementById('doc-selection').style.display = 'none';
+          document.getElementById('doc-chat').style.display = 'block';
+          documentQuestions = [];
+          documentResponses = {};
+          currentQuestionIndex = 0;
+          document.getElementById('chat-box-gen').innerHTML = '';
+          fetchTemplate().then(() => fetchQuestions());
+        }
+      });
+
       document.getElementById('download-doc')?.addEventListener('click', () => {
         if (window.generatedPdfBase64) {
           // Download the PDF from the backend-generated Base64
@@ -785,6 +846,7 @@
         document.getElementById('doc-selection').style.display = 'block';
         document.getElementById('doc-chat').style.display = 'none';
         document.getElementById('doc-preview').style.display = 'none';
+        uploadedFileName.textContent = 'No file selected';
         loadGenDocuments();
       });
 
