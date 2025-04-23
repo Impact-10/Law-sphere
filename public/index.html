@@ -203,7 +203,7 @@
     let categoriesData = {};
 
     // Document Generator State
-    let selectedDocumentTitle = null; // Renamed for clarity
+    let selectedDocumentTitle = null; // Stores the raw title (e.g., "nominationform.pdf")
     let documentQuestions = [];
     let documentResponses = {};
     let currentQuestionIndex = 0;
@@ -347,11 +347,13 @@
           categoriesData = {};
           querySnapshot.forEach((doc) => {
             const data = doc.data();
-            const title = data.title.replace(/\.pdf$|\.doc$/, '');
-            const category = determineCategory(title, data.category);
+            const title = data.title; // Keep the raw title (e.g., "nominationform.pdf")
+            const displayTitle = title.replace(/\.pdf$|\.doc$/, ''); // For display only
+            const category = determineCategory(displayTitle, data.category);
             if (!categoriesData[category]) categoriesData[category] = [];
             categoriesData[category].push({
-              title: title,
+              title: title, // Store raw title
+              displayTitle: displayTitle, // For UI display
               url: data.url
             });
           });
@@ -438,10 +440,10 @@
         const docItem = document.createElement('div');
         docItem.className = 'document-item';
         docItem.innerHTML = `
-          <div class="document-title">${doc.title}</div>
-          <div class="document-action">Download ${doc.title}</div>
+          <div class="document-title">${doc.displayTitle}</div>
+          <div class="document-action">Download ${doc.displayTitle}</div>
         `;
-        docItem.addEventListener('click', () => downloadDocument(doc.url, doc.title));
+        docItem.addEventListener('click', () => downloadDocument(doc.url, doc.displayTitle));
         documentsList.appendChild(docItem);
       });
       categoryDiv.appendChild(documentsList);
@@ -514,12 +516,14 @@
         console.log("Documents fetched from Firestore for generator:");
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          const title = data.title.replace(/\.pdf$|\.doc$/, '');
+          const title = data.title; // Keep the raw title (e.g., "nominationform.pdf")
+          const displayTitle = title.replace(/\.pdf$|\.doc$/, ''); // For display only
           console.log("Document title:", title);
-          const category = determineCategory(title, data.category);
+          const category = determineCategory(displayTitle, data.category);
           if (!window.genCategoriesData[category]) window.genCategoriesData[category] = [];
           window.genCategoriesData[category].push({
-            title: title,
+            title: title, // Store raw title
+            displayTitle: displayTitle, // For UI display
             url: data.url
           });
         });
@@ -577,7 +581,7 @@
               const docItem = document.createElement('div');
               docItem.className = 'template-card';
               docItem.innerHTML = `
-                <div class="template-title">${doc.title}</div>
+                <div class="template-title">${doc.displayTitle}</div>
                 <div class="template-desc">Click to generate</div>
               `;
               docItem.addEventListener('click', () => selectGenDocument(doc.title));
@@ -595,7 +599,7 @@
             const docItem = document.createElement('div');
             docItem.className = 'template-card';
             docItem.innerHTML = `
-              <div class="template-title">${doc.title}</div>
+              <div class="template-title">${doc.displayTitle}</div>
               <div class="template-desc">Click to generate</div>
             `;
             docItem.addEventListener('click', () => selectGenDocument(doc.title));
@@ -609,7 +613,7 @@
     }
 
     function selectGenDocument(title) {
-      selectedDocumentTitle = title.replace(/\.pdf$|\.doc$/, '');
+      selectedDocumentTitle = title; // Use the raw title (e.g., "nominationform.pdf")
       console.log("Selected document for generation:", selectedDocumentTitle);
       document.getElementById('doc-selection').style.display = 'none';
       document.getElementById('doc-chat').style.display = 'block';
@@ -705,7 +709,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            documentTitle: selectedDocumentTitle,
+            documentTitle: selectedDocumentTitle, // Send raw title (e.g., "nominationform.pdf")
             responses: documentResponses
           })
         });
@@ -735,7 +739,7 @@
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `${selectedDocumentTitle}.pdf`;
+          a.download = `${selectedDocumentTitle.replace(/\.pdf$|\.doc$/, '')}.pdf`; // Remove .pdf for filename
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
