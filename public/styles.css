@@ -1,6 +1,4 @@
-/* ==========================================================================
-   Base Styles
-   ========================================================================== */
+/*Base Styles*/
    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
    /* Color palette */
@@ -28,9 +26,7 @@
      overflow-x: hidden;
    }
    
-   /* ==========================================================================
-      Navbar
-      ========================================================================== */
+   /*Navbar*/
    .navbar {
      width: 100%;
      position: fixed;
@@ -94,9 +90,7 @@
      border-radius: 2px;
    }
    
-   /* ==========================================================================
-      Section Base
-      ========================================================================== */
+   /*Section Base*/
    .section {
      padding: 100px 0 60px 0;
      min-height: 70vh;
@@ -111,9 +105,7 @@
      }
    }
    
-   /* ==========================================================================
-      Hero Section
-      ========================================================================== */
+   /*Hero Section*/
    .hero-section {
      display: flex;
      align-items: center;
@@ -166,10 +158,7 @@
      transform: translateY(-2px) scale(1.04);
    }
    
-   .hero-image-placeholder,
-   .chatbot-image-placeholder,
-   .documents-image-placeholder,
-   .about-image-placeholder {
+   .hero-image-placeholder, .chatbot-image-placeholder, .documents-image-placeholder, .about-image-placeholder {
      width: 340px;
      height: 260px;
      background: var(--accent);
@@ -183,9 +172,7 @@
      margin: 20px 0 0 20px;
    }
    
-   /* ==========================================================================
-      Chatbot Section
-      ========================================================================== */
+   /*Chatbot Section*/
    .chatbot-section {
      background: #fff;
      border-radius: 18px;
@@ -245,11 +232,7 @@
      font-family: inherit;
    }
    
-   button,
-   .login-button,
-   .quick-question,
-   .clear-chat,
-   .documents-button {
+   button, .login-button, .quick-question, .clear-chat, .documents-button {
      padding: 10px 15px;
      font-size: 1rem;
      border: none;
@@ -263,11 +246,7 @@
      font-weight: 500;
    }
    
-   button:hover,
-   .login-button:hover,
-   .quick-question:hover,
-   .clear-chat:hover,
-   .documents-button:hover {
+   button:hover, .login-button:hover, .quick-question:hover, .clear-chat:hover, .documents-button:hover {
      background: var(--button-alt-bg);
      color: var(--button-alt-text);
      transform: scale(1.04);
@@ -310,9 +289,7 @@
      color: var(--button-text);
    }
    
-   /* ==========================================================================
-      Documents Section
-      ========================================================================== */
+   /*Documents Section*/
    .documents-section {
      background: var(--accent);
      border-radius: 18px;
@@ -355,9 +332,7 @@
      flex: 1;
    }
    
-   /* ==========================================================================
-      Document Browser
-      ========================================================================== */
+   /*Document Browser*/
    #documents-browser {
      background: var(--bg);
      min-height: 100vh;
@@ -420,9 +395,7 @@
      transition: all 0.3s ease;
    }
    
-   .back-btn:hover,
-   .browse-btn:hover,
-   .generate-btn:hover {
+   .back-btn:hover, .browse-btn:hover, .generate-btn:hover {
      background: var(--button-alt-bg);
      color: var(--button-alt-text);
      transform: scale(1.04);
@@ -498,9 +471,7 @@
      color: #666;
    }
    
-   /* ==========================================================================
-      Document Generator
-      ========================================================================== */
+   /*Document Generator*/
    #document-generator {
      background: var(--bg);
      min-height: 100vh;
@@ -731,9 +702,7 @@
      transform: scale(1.04);
    }
    
-   /* ==========================================================================
-      About Section
-      ========================================================================== */
+   /* About Section*/
    .about-section {
      background: #fff;
      border-radius: 18px;
@@ -770,9 +739,7 @@
      margin: 24px auto 0 auto;
    }
    
-   /* ==========================================================================
-      Misc Styles
-      ========================================================================== */
+   /* Misc Styles*/
    .message {
      margin: 15px 0;
      padding: 12px 20px;
@@ -795,9 +762,7 @@
      display: inline-block;
    }
    
-   /* ==========================================================================
-      Responsive Adjustments
-      ========================================================================== */
+   /* Responsive Adjustments*/
    @media (max-width: 768px) {
      .document-header {
        flex-direction: column;
@@ -852,17 +817,14 @@
      }
    }
    
-   /* ==========================================================================
-      Animations
-      ========================================================================== */
+   /*Animations*/
+
    @keyframes fadeIn {
      from { opacity: 0; }
      to { opacity: 1; }
    }
    
-   /* ==========================================================================
-      Scrollbar
-      ========================================================================== */
+   /*Scrollbar*/
    ::-webkit-scrollbar {
      width: 8px;
      background: var(--accent);
