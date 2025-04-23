@@ -419,7 +419,7 @@
         });
       } else {
         if (categoriesData[category] && categoriesData[category].length > 0) {
-          const categoryElement = createCategoryElement(category, categoriesData[category]);
+          const categoryElement = createCategoryElement(category, documents);
           contentElement.appendChild(categoryElement);
         } else {
           contentElement.innerHTML = '<p style="text-align: center; padding: 20px;">No documents found in this category.</p>';
