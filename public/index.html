@@ -137,20 +137,24 @@
     <div class="generator-content">
       <div id="doc-selection" class="generator-section">
         <h2>1. Select Document</h2>
-        <p>Upload a document or select one from the list to generate it with AI assistance.</p>
-        <!-- Add file upload option -->
-        <div class="upload-section">
-          <label for="upload-pdf" class="upload-btn">Upload PDF</label>
-          <input type="file" id="upload-pdf" accept="application/pdf" style="display:none;" />
-          <p id="uploaded-file-name">No file selected</p>
-        </div>
+        <p>Choose a document type to generate with AI assistance.</p>
         <div class="category-tabs" id="gen-category-tabs">
           <button class="category-tab active" data-category="all">All</button>
         </div>
         <div id="gen-document-content"></div>
       </div>
+      <div id="doc-upload" class="generator-section" style="display:none;">
+        <h2>2. Upload Template</h2>
+        <p>Upload the PDF template for the selected document from your device.</p>
+        <div class="upload-section">
+          <label for="upload-template" class="upload-btn">Upload PDF Template</label>
+          <input type="file" id="upload-template" accept="application/pdf" style="display:none;" />
+          <p id="uploaded-template-name">No file selected</p>
+        </div>
+        <button id="proceed-to-chat" class="proceed-btn" style="display:none;">Proceed to Questions</button>
+      </div>
       <div id="doc-chat" class="generator-section" style="display:none;">
-        <h2>2. Answer Questions</h2>
+        <h2>3. Answer Questions</h2>
         <p>Chat with AI to fill the document. Enter your answers below.</p>
         <div id="chat-box-gen" class="chat-box-gen"></div>
         <div class="input-area-gen">
@@ -160,7 +164,7 @@
         <button id="generate-doc-final" class="generate-btn" style="display:none;">Generate Document</button>
       </div>
       <div id="doc-preview" class="generator-section" style="display:none;">
-        <h2>3. Document Preview</h2>
+        <h2>4. Document Preview</h2>
         <p id="preview-message">Your document is ready. Download it below.</p>
         <div id="preview-container" class="preview-box"></div>
         <div class="preview-actions">
@@ -214,7 +218,7 @@
 
     // Document Generator State
     let selectedDocumentTitle = null;
-    let selectedDocumentFile = null; // Store the user-uploaded or selected PDF file
+    let selectedDocumentFile = null; // Store the user-uploaded PDF template
     let documentQuestions = [];
     let documentResponses = {};
     let currentQuestionIndex = 0;
@@ -463,11 +467,9 @@
           <div class="document-title">${doc.displayTitle}</div>
           <div class="document-actions">
             <button class="document-action download-btn">Download</button>
-            <button class="document-action use-btn">Use for Generation</button>
           </div>
         `;
         docItem.querySelector('.download-btn').addEventListener('click', () => downloadDocument(doc.url, doc.displayTitle));
-        docItem.querySelector('.use-btn').addEventListener('click', () => useDocumentForGeneration(doc.url, doc.displayTitle));
         documentsList.appendChild(docItem);
       });
       categoryDiv.appendChild(documentsList);
@@ -481,33 +483,6 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    }
-
-    async function useDocumentForGeneration(url, displayTitle) {
-      try {
-        // Fetch the PDF file from the URL
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Failed to fetch document: ${response.status}`);
-        const blob = await response.blob();
-        const file = new File([blob], `${displayTitle}.pdf`, { type: 'application/pdf' });
-        
-        // Switch to the document generator section
-        showDocumentGenerator();
-        
-        // Set the selected file and title
-        selectedDocumentTitle = displayTitle;
-        selectedDocumentFile = file;
-        document.getElementById('uploaded-file-name').textContent = file.name;
-        
-        // Proceed to the chat section
-        document.getElementById('doc-selection').style.display = 'none';
-        document.getElementById('doc-chat').style.display = 'block';
-        await fetchTemplate();
-        fetchQuestions();
-      } catch (error) {
-        console.error('Error using document for generation:', error);
-        alert('Failed to load the document. Please try again.');
-      }
     }
 
     // ====================== Document Generator Functions ======================
@@ -524,19 +499,24 @@
         <div class="generator-content">
           <div id="doc-selection" class="generator-section">
             <h2>1. Select Document</h2>
-            <p>Upload a document or select one from the list to generate it with AI assistance.</p>
-            <div class="upload-section">
-              <label for="upload-pdf" class="upload-btn">Upload PDF</label>
-              <input type="file" id="upload-pdf" accept="application/pdf" style="display:none;" />
-              <p id="uploaded-file-name">No file selected</p>
-            </div>
+            <p>Choose a document type to generate with AI assistance.</p>
             <div class="category-tabs" id="gen-category-tabs">
               <button class="category-tab active" data-category="all">All</button>
             </div>
             <div id="gen-document-content"></div>
           </div>
+          <div id="doc-upload" class="generator-section" style="display:none;">
+            <h2>2. Upload Template</h2>
+            <p>Upload the PDF template for the selected document from your device.</p>
+            <div class="upload-section">
+              <label for="upload-template" class="upload-btn">Upload PDF Template</label>
+              <input type="file" id="upload-template" accept="application/pdf" style="display:none;" />
+              <p id="uploaded-template-name">No file selected</p>
+            </div>
+            <button id="proceed-to-chat" class="proceed-btn" style="display:none;">Proceed to Questions</button>
+          </div>
           <div id="doc-chat" class="generator-section" style="display:none;">
-            <h2>2. Answer Questions</h2>
+            <h2>3. Answer Questions</h2>
             <p>Chat with AI to fill the document. Enter your answers below.</p>
             <div id="chat-box-gen" class="chat-box-gen"></div>
             <div class="input-area-gen">
@@ -546,7 +526,7 @@
             <button id="generate-doc-final" class="generate-btn" style="display:none;">Generate Document</button>
           </div>
           <div id="doc-preview" class="generator-section" style="display:none;">
-            <h2>3. Document Preview</h2>
+            <h2>4. Document Preview</h2>
             <p id="preview-message">Your document is ready. Download it below.</p>
             <div id="preview-container" class="preview-box"></div>
             <div class="preview-actions">
@@ -634,9 +614,9 @@
               docItem.className = 'template-card';
               docItem.innerHTML = `
                 <div class="template-title">${doc.displayTitle}</div>
-                <div class="template-desc">Click to use for generation</div>
+                <div class="template-desc">Click to select this document type</div>
               `;
-              docItem.addEventListener('click', () => useDocumentForGeneration(doc.url, doc.displayTitle));
+              docItem.addEventListener('click', () => selectGenDocument(doc.displayTitle));
               documentsList.appendChild(docItem);
             });
             categoryDiv.appendChild(documentsList);
@@ -652,9 +632,9 @@
             docItem.className = 'template-card';
             docItem.innerHTML = `
               <div class="template-title">${doc.displayTitle}</div>
-              <div class="template-desc">Click to use for generation</div>
+              <div class="template-desc">Click to select this document type</div>
             `;
-            docItem.addEventListener('click', () => useDocumentForGeneration(doc.url, doc.displayTitle));
+            docItem.addEventListener('click', () => selectGenDocument(doc.displayTitle));
             documentsList.appendChild(docItem);
           });
           contentElement.appendChild(documentsList);
@@ -664,11 +644,18 @@
       }
     }
 
+    function selectGenDocument(displayTitle) {
+      selectedDocumentTitle = displayTitle;
+      document.getElementById('doc-selection').style.display = 'none';
+      document.getElementById('doc-upload').style.display = 'block';
+      document.getElementById('uploaded-template-name').textContent = 'No file selected';
+    }
+
     async function fetchTemplate() {
       if (!selectedDocumentFile) {
-        addChatMessage('Error: No document selected or uploaded.', false);
+        addChatMessage('Error: No template uploaded.', false);
         document.getElementById('doc-chat').style.display = 'none';
-        document.getElementById('doc-selection').style.display = 'block';
+        document.getElementById('doc-upload').style.display = 'block';
         return;
       }
 
@@ -691,7 +678,7 @@
         }));
       } catch (error) {
         console.error('Template fetch error:', error);
-        addChatMessage(`Error: Unable to fetch the template for this document. Using a default template instead.`, false);
+        addChatMessage(`Error: Unable to fetch the template from the server (it might be offline). Using a default template instead.`, false);
         documentTemplate = null;
         documentQuestions = [
           { question: "What is your full name?", fieldName: "fullName" },
@@ -704,7 +691,7 @@
       if (documentQuestions.length === 0) {
         addChatMessage("Error: No fields available for this document.", false);
         document.getElementById('doc-chat').style.display = 'none';
-        document.getElementById('doc-selection').style.display = 'block';
+        document.getElementById('doc-upload').style.display = 'block';
         return;
       }
       addChatMessage('AI: Please answer the following questions to fill the document:', false);
@@ -796,25 +783,32 @@
     }
 
     function setupGeneratorEventListeners() {
-      // Handle file upload
-      const uploadInput = document.getElementById('upload-pdf');
-      const uploadedFileName = document.getElementById('uploaded-file-name');
+      // Handle template upload
+      const uploadInput = document.getElementById('upload-template');
+      const uploadedTemplateName = document.getElementById('uploaded-template-name');
+      const proceedBtn = document.getElementById('proceed-to-chat');
       uploadInput?.addEventListener('change', (event) => {
         const file = event.target.files[0];
         if (file) {
           selectedDocumentFile = file;
-          selectedDocumentTitle = file.name.replace(/\.pdf$|\.doc$/, '');
-          uploadedFileName.textContent = file.name;
-          
-          // Proceed to the chat section
-          document.getElementById('doc-selection').style.display = 'none';
-          document.getElementById('doc-chat').style.display = 'block';
-          documentQuestions = [];
-          documentResponses = {};
-          currentQuestionIndex = 0;
-          document.getElementById('chat-box-gen').innerHTML = '';
-          fetchTemplate().then(() => fetchQuestions());
+          uploadedTemplateName.textContent = file.name;
+          proceedBtn.style.display = 'block';
+        } else {
+          uploadedTemplateName.textContent = 'No file selected';
+          proceedBtn.style.display = 'none';
         }
+      });
+
+      // Proceed to Q&A section after uploading template
+      proceedBtn?.addEventListener('click', async () => {
+        document.getElementById('doc-upload').style.display = 'none';
+        document.getElementById('doc-chat').style.display = 'block';
+        documentQuestions = [];
+        documentResponses = {};
+        currentQuestionIndex = 0;
+        document.getElementById('chat-box-gen').innerHTML = '';
+        await fetchTemplate();
+        fetchQuestions();
       });
 
       document.getElementById('download-doc')?.addEventListener('click', () => {
@@ -844,9 +838,10 @@
         resetDocumentGeneratorState();
         window.generatedPdfBase64 = null; // Clear the stored Base64
         document.getElementById('doc-selection').style.display = 'block';
+        document.getElementById('doc-upload').style.display = 'none';
         document.getElementById('doc-chat').style.display = 'none';
         document.getElementById('doc-preview').style.display = 'none';
-        uploadedFileName.textContent = 'No file selected';
+        uploadedTemplateName.textContent = 'No file selected';
         loadGenDocuments();
       });
 
