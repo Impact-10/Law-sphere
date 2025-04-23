@@ -203,7 +203,7 @@
     let categoriesData = {};
 
     // Document Generator State
-    let currentDocument = null;
+    let selectedDocumentTitle = null; // Renamed for clarity
     let documentQuestions = [];
     let documentResponses = {};
     let currentQuestionIndex = 0;
@@ -325,6 +325,14 @@
       documentsBrowser.style.display = 'none';
       documentGenerator.style.display = 'none';
       mainContent.style.display = 'block';
+      resetDocumentGeneratorState();
+    }
+
+    function resetDocumentGeneratorState() {
+      selectedDocumentTitle = null;
+      documentQuestions = [];
+      documentResponses = {};
+      currentQuestionIndex = 0;
     }
 
     function loadDocuments() {
@@ -500,13 +508,13 @@
       const documentContent = document.getElementById('gen-document-content');
       const categoryTabs = document.getElementById('gen-category-tabs');
       documentContent.innerHTML = '<p style="text-align: center; padding: 20px;">Loading documents...</p>';
-      window.genCategoriesData = {}; // <-- GLOBAL!
+      window.genCategoriesData = {};
       try {
         const querySnapshot = await db.collection('legal_documents').get();
         console.log("Documents fetched from Firestore for generator:");
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          const title = data.title.replace(/\.pdf$|\.doc$/, ''); // Normalize title
+          const title = data.title.replace(/\.pdf$|\.doc$/, '');
           console.log("Document title:", title);
           const category = determineCategory(title, data.category);
           if (!window.genCategoriesData[category]) window.genCategoriesData[category] = [];
@@ -601,34 +609,54 @@
     }
 
     function selectGenDocument(title) {
-      currentDocument = title.replace(/\.pdf$|\.doc$/, ''); // Normalize title for consistency
-      console.log("Selected document for generation:", currentDocument);
+      selectedDocumentTitle = title.replace(/\.pdf$|\.doc$/, '');
+      console.log("Selected document for generation:", selectedDocumentTitle);
       document.getElementById('doc-selection').style.display = 'none';
       document.getElementById('doc-chat').style.display = 'block';
       documentQuestions = [];
       documentResponses = {};
+      currentQuestionIndex = 0;
+      document.getElementById('chat-box-gen').innerHTML = '';
       fetchQuestions();
     }
 
     async function fetchQuestions() {
       try {
-        console.log("Fetching questions for document:", currentDocument);
+        console.log("Fetching questions for document:", selectedDocumentTitle);
+        if (!selectedDocumentTitle) {
+          addChatMessage("Error: No document selected. Please start over.", false);
+          console.error("Fetch questions error: No document selected");
+          document.getElementById('doc-chat').style.display = 'none';
+          document.getElementById('doc-selection').style.display = 'block';
+          return;
+        }
         const response = await fetch(`${BASE_URL}/get-document-questions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ documentTitle: currentDocument })
+          body: JSON.stringify({ documentTitle: selectedDocumentTitle })
         });
-        if (!response.ok) throw new Error(`Failed to fetch questions: ${response.status}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Failed to fetch questions: ${response.status} - ${errorData.error}`);
+        }
         const data = await response.json();
         documentQuestions = data.questions || [];
         console.log("Questions received:", documentQuestions);
+        if (documentQuestions.length === 0) {
+          addChatMessage("Error: No questions available for this document.", false);
+          document.getElementById('doc-chat').style.display = 'none';
+          document.getElementById('doc-selection').style.display = 'block';
+          return;
+        }
         addChatMessage('AI: Please answer the following questions to fill the document:', false);
-        documentQuestions.forEach(q => addChatMessage(`AI: ${q.question}`, false));
+        addChatMessage(`AI: ${documentQuestions[currentQuestionIndex].question}`, false);
         document.getElementById('send-btn-gen').style.display = 'block';
         document.getElementById('generate-doc-final').style.display = 'none';
       } catch (error) {
         addChatMessage(`Error: ${error.message}`, false);
         console.error('Question fetch error:', error);
+        document.getElementById('doc-chat').style.display = 'none';
+        document.getElementById('doc-selection').style.display = 'block';
       }
     }
 
@@ -647,12 +675,13 @@
       addChatMessage(message, true);
       document.getElementById('user-input-gen').value = '';
 
-      const currentQuestion = documentQuestions.find((q, i) => !documentResponses[q.fieldName] && i === Object.keys(documentResponses).length);
-      if (currentQuestion) {
+      if (currentQuestionIndex < documentQuestions.length) {
+        const currentQuestion = documentQuestions[currentQuestionIndex];
         documentResponses[currentQuestion.fieldName] = message;
         console.log("Current responses:", documentResponses);
-        if (Object.keys(documentResponses).length < documentQuestions.length) {
-          const nextQuestion = documentQuestions[Object.keys(documentResponses).length];
+        currentQuestionIndex++;
+        if (currentQuestionIndex < documentQuestions.length) {
+          const nextQuestion = documentQuestions[currentQuestionIndex];
           addChatMessage(`AI: ${nextQuestion.question}`, false);
         } else {
           addChatMessage('AI: All questions answered. Click "Generate Document" to proceed.', false);
@@ -664,17 +693,26 @@
 
     async function generateDocument() {
       try {
-        console.log("Generating document with title:", currentDocument);
+        console.log("Generating document with title:", selectedDocumentTitle);
         console.log("Responses:", documentResponses);
+        if (!selectedDocumentTitle) {
+          throw new Error("No document selected. Please start over.");
+        }
+        if (Object.keys(documentResponses).length !== documentQuestions.length) {
+          throw new Error("Please answer all questions before generating the document.");
+        }
         const response = await fetch(`${BASE_URL}/generate-filled-document`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            documentTitle: currentDocument,
+            documentTitle: selectedDocumentTitle,
             responses: documentResponses
           })
         });
-        if (!response.ok) throw new Error(`Failed to generate document: ${response.status}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Failed to generate document: ${response.status} - ${errorData.details || errorData.error}`);
+        }
         const data = await response.json();
         console.log("Document generation response:", data);
         document.getElementById('doc-chat').style.display = 'none';
@@ -684,6 +722,8 @@
       } catch (error) {
         addChatMessage(`Error: ${error.message}`, false);
         console.error('Generation error:', error);
+        document.getElementById('doc-chat').style.display = 'none';
+        document.getElementById('doc-selection').style.display = 'block';
       }
     }
 
@@ -695,7 +735,7 @@
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `${currentDocument}.pdf`;
+          a.download = `${selectedDocumentTitle}.pdf`;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
@@ -706,12 +746,10 @@
       });
 
       document.getElementById('start-over-gen')?.addEventListener('click', () => {
+        resetDocumentGeneratorState();
         document.getElementById('doc-selection').style.display = 'block';
         document.getElementById('doc-chat').style.display = 'none';
         document.getElementById('doc-preview').style.display = 'none';
-        currentDocument = null;
-        documentQuestions = [];
-        documentResponses = {};
         loadGenDocuments();
       });
 
