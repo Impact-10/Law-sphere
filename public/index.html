@@ -5,739 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Law Sphere</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    :root {
-      --bg: #F1EFEC;
-      --accent: #D4C9BE;
-      --primary: #123458;
-      --text: #030303;
-      --button-bg: #123458;
-      --button-text: #F1EFEC;
-      --button-alt-bg: #D4C9BE;
-      --button-alt-text: #123458;
-    }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: 'Poppins', sans-serif;
-      margin: 0;
-      padding: 0;
-      background: var(--bg);
-      color: var(--text);
-      overflow-x: hidden;
-    }
-
-    #main-content { position: relative; }
-
-    .navbar {
-      position: fixed;
-      top: 0;
-      width: 100%;
-      background: rgba(241, 239, 236, 0.8);
-      backdrop-filter: blur(10px);
-      z-index: 1000;
-      padding: 15px 0;
-      border-bottom: 1px solid rgba(18, 52, 88, 0.1);
-    }
-
-    .nav-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-
-    .nav-logo {
-      font-size: 1.8em;
-      font-weight: 700;
-      color: var(--primary);
-    }
-
-    .nav-links {
-      list-style: none;
-      display: flex;
-      gap: 30px;
-      margin: 0;
-      padding: 0;
-    }
-
-    .nav-link {
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 500;
-      font-size: 1.1em;
-      transition: color 0.3s ease;
-    }
-
-    .nav-link:hover,
-    .nav-link.active {
-      color: var(--button-alt-text);
-      border-bottom: 2px solid var(--primary);
-    }
-
-    .section {
-      padding: 80px 20px;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .hero-section {
-      background: linear-gradient(135deg, rgba(18, 52, 88, 0.05), var(--bg));
-    }
-
-    .hero-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      max-width: 1200px;
-      width: 100%;
-      gap: 40px;
-    }
-
-    .hero-title {
-      font-size: 3em;
-      font-weight: 700;
-      color: var(--primary);
-      margin-bottom: 20px;
-    }
-
-    .hero-subtitle {
-      font-size: 1.2em;
-      color: #666;
-      line-height: 1.6;
-    }
-
-    .cta-button {
-      display: inline-block;
-      background: var(--button-bg);
-      color: var(--button-text);
-      padding: 14px 25px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 600;
-      margin-top: 20px;
-      transition: all 0.3s ease;
-    }
-
-    .cta-button:hover {
-      background: var(--button-alt-bg);
-      color: var(--button-alt-text);
-      transform: scale(1.04);
-    }
-
-    .hero-image-placeholder { flex: 1; text-align: center; }
-
-    .img-placeholder-text { font-size: 1em; color: #999; }
-
-    .chatbot-section { background: var(--bg); }
-
-    .chatbot-desc {
-      text-align: center;
-      max-width: 800px;
-      margin: 0 auto 40px;
-    }
-
-    .chatbot-desc h2 {
-      font-size: 2.5em;
-      color: var(--primary);
-      margin-bottom: 15px;
-    }
-
-    .chatbot-desc p {
-      font-size: 1.1em;
-      color: #666;
-      line-height: 1.6;
-    }
-
-    .chatbot-interface {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 40px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .chatbot-image-placeholder { flex: 1; text-align: center; }
-
-    .chatbot-box {
-      flex: 1;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 12px rgba(19, 52, 88, 0.1);
-      padding: 20px;
-      max-width: 500px;
-    }
-
-    .chat-box {
-      height: 300px;
-      overflow-y: auto;
-      border: 1px solid var(--accent);
-      border-radius: 6px;
-      padding: 15px;
-      margin-bottom: 15px;
-      background: #fafafa;
-    }
-
-    .message {
-      margin-bottom: 10px;
-      padding: 8px 12px;
-      border-radius: 6px;
-      max-width: 80%;
-      word-wrap: break-word;
-    }
-
-    .user-message {
-      background: var(--primary);
-      color: #fff;
-      margin-left: auto;
-      text-align: right;
-    }
-
-    .bot-message {
-      background: var(--accent);
-      color: var(--text);
-      margin-right: auto;
-    }
-
-    .input-area {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-
-    #user-input {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid var(--accent);
-      border-radius: 6px;
-      font-size: 1em;
-      font-family: inherit;
-    }
-
-    #send-btn,
-    #clear-chat-btn {
-      background: var(--primary);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.3s ease;
-    }
-
-    #clear-chat-btn {
-      background: var(--button-alt-bg);
-      color: var(--button-alt-text);
-    }
-
-    #send-btn:hover,
-    #clear-chat-btn:hover {
-      opacity: 0.9;
-      transform: scale(1.02);
-    }
-
-    .login-button {
-      display: block;
-      width: 100%;
-      background: var(--button-alt-bg);
-      color: var(--primary);
-      padding: 12px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s ease;
-    }
-
-    .login-button:hover {
-      background: var(--primary);
-      color: var(--button-text);
-    }
-
-    .quick-questions { text-align: center; margin-top: 30px; }
-
-    .quick-questions-title {
-      font-size: 1.5em;
-      color: var(--primary);
-      margin-bottom: 15px;
-    }
-
-    .quick-buttons {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .quick-question {
-      background: var(--accent);
-      color: var(--text);
-      padding: 10px 20px;
-      border-radius: 20px;
-      border: none;
-      cursor: pointer;
-      font-size: 0.9em;
-      transition: all 0.3s ease;
-    }
-
-    .quick-question:hover {
-      background: var(--primary);
-      color: white;
-    }
-
-    .documents-section {
-      background: linear-gradient(135deg, var(--bg), rgba(18, 52, 88, 0.05));
-    }
-
-    .documents-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      max-width: 1200px;
-      width: 100%;
-      gap: 40px;
-    }
-
-    .documents-text { flex: 1; }
-
-    .documents-text h2 {
-      font-size: 2.5em;
-      color: var(--primary);
-      margin-bottom: 15px;
-    }
-
-    .documents-text p {
-      font-size: 1.1em;
-      color: #666;
-      line-height: 1.6;
-    }
-
-    .document-actions {
-      display: flex;
-      gap: 15px;
-      margin-top: 20px;
-    }
-
-    .doc-btn,
-    .gen-btn {
-      background: var(--button-bg);
-      color: var(--button-text);
-      padding: 14px 25px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s ease;
-    }
-
-    .gen-btn {
-      background: var(--button-alt-bg);
-      color: var(--button-alt-text);
-    }
-
-    .doc-btn:hover,
-    .gen-btn:hover {
-      background: var(--button-alt-bg);
-      color: var(--button-alt-text);
-      transform: scale(1.04);
-    }
-
-    .documents-image-placeholder { flex: 1; text-align: center; }
-
-    .doc-categories { max-width: 1200px; margin: 0 auto; padding: 20px; }
-
-    .about-section { background: var(--bg); }
-
-    .about-content {
-      text-align: center;
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
-    .about-content h2 {
-      font-size: 2.5em;
-      color: var(--primary);
-      margin-bottom: 15px;
-    }
-
-    .about-content p {
-      font-size: 1.1em;
-      color: #666;
-      line-height: 1.6;
-      margin-bottom: 30px;
-    }
-
-    .about-image-placeholder { text-align: center; }
-
-    #documents-browser {
-      background: var(--bg);
-      min-height: 100vh;
-      width: 100%;
-      padding: 30px 0;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-
-    .documents-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-
-    .document-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-    }
-
-    .document-header-actions { display: flex; gap: 10px; }
-
-    .browse-btn,
-    .generate-btn,
-    .back-btn {
-      background: var(--button-alt-bg);
-      color: var(--primary);
-      padding: 14px 25px;
-      border-radius: 8px;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .browse-btn.active,
-    .generate-btn.active {
-      background: var(--primary);
-      color: var(--button-text);
-    }
-
-    .browse-btn:hover,
-    .generate-btn:hover,
-    .back-btn:hover {
-      background: var(--primary);
-      color: var(--button-text);
-      transform: scale(1.04);
-    }
-
-    .category-tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-
-    .category-tab {
-      background: #fff;
-      border: 1px solid var(--accent);
-      padding: 8px 20px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.3s ease;
-    }
-
-    .category-tab:hover,
-    .category-tab.active {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
-    }
-
-    .document-category { margin-bottom: 30px; }
-
-    .document-category-title {
-      font-size: 1.8em;
-      color: var(--primary);
-      margin-bottom: 15px;
-    }
-
-    .document-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 15px;
-    }
-
-    .document-item {
-      background: #fff;
-      border-radius: 8px;
-      padding: 15px;
-      box-shadow: 0 2px 12px rgba(19, 52, 88, 0.1);
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .document-item:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(19, 52, 88, 0.15);
-      background: var(--accent);
-    }
-
-    .document-title {
-      font-size: 1.1em;
-      font-weight: 600;
-      color: var(--primary);
-      margin-bottom: 5px;
-    }
-
-    .document-action { font-size: 0.9em; color: #666; }
-
-    #document-generator {
-      background: var(--bg);
-      min-height: 100vh;
-      width: 100%;
-      padding: 30px 0;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-
-    .generator-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-      margin-bottom: 30px;
-    }
-
-    .generator-title {
-      color: var(--primary);
-      font-size: 2em;
-      font-weight: 700;
-    }
-
-    .back-home-btn {
-      background: var(--button-alt-bg);
-      color: var(--primary);
-      padding: 14px 25px;
-      border-radius: 8px;
-      font-weight: 600;
-      min-width: 150px;
-      text-align: center;
-      border: none;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .back-home-btn:hover {
-      background: var(--primary);
-      color: var(--button-text);
-      transform: scale(1.04);
-    }
-
-    .generator-content {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-
-    .generator-section { margin-bottom: 40px; }
-
-    .generator-section h2 {
-      color: var(--primary);
-      font-size: 1.8em;
-      font-weight: 600;
-      margin-bottom: 10px;
-    }
-
-    .generator-section p {
-      color: #666;
-      font-size: 1.1em;
-      margin-bottom: 20px;
-    }
-
-    .template-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 20px;
-      padding: 10px 0;
-    }
-
-    .template-card {
-      background: #fff;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 2px 12px rgba(19, 52, 88, 0.1);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      min-height: 140px;
-    }
-
-    .template-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(19, 52, 88, 0.15);
-      background: var(--accent);
-    }
-
-    .template-title {
-      font-size: 1.2em;
-      font-weight: 600;
-      color: var(--primary);
-      margin-bottom: 8px;
-      overflow-wrap: break-word;
-      word-break: break-word;
-      max-height: 4.8em;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      line-clamp: 4;
-      -webkit-line-clamp: 4;
-      -webkit-box-orient: vertical;
-    }
-
-    .template-desc { font-size: 0.9em; color: #666; }
-
-    .preview-box {
-      background: #fff;
-      border: 1px solid var(--accent);
-      border-radius: 8px;
-      padding: 20px;
-      min-height: 200px;
-      max-height: 400px;
-      overflow-y: auto;
-      margin-bottom: 20px;
-    }
-
-    .generate-btn,
-    .download-btn,
-    .nav-btn {
-      background: var(--primary);
-      color: white;
-      padding: 14px 25px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      margin: 5px;
-    }
-
-    .nav-btn {
-      background: var(--button-alt-bg);
-      color: var(--button-alt-text);
-    }
-
-    .generate-btn:hover,
-    .download-btn:hover,
-    .nav-btn:hover {
-      background: var(--button-alt-bg);
-      color: var(--button-alt-text);
-      transform: scale(1.04);
-    }
-
-    .preview-actions {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    #fill-form {
-      background: #fff;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 2px 12px rgba(19, 52, 88, 0.1);
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    #fill-form label {
-      display: block;
-      font-weight: 500;
-      color: var(--primary);
-      margin-bottom: 5px;
-    }
-
-    #fill-form input,
-    #fill-form textarea {
-      width: 100%;
-      padding: 9px;
-      border: 1.5px solid var(--accent);
-      border-radius: 6px;
-      font-size: 1em;
-      font-family: inherit;
-      margin-bottom: 15px;
-      box-sizing: border-box;
-    }
-
-    #fill-form button {
-      background: var(--primary);
-      color: white;
-      padding: 14px 25px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 1.1em;
-      border: none;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: block;
-      margin: 0 auto;
-    }
-
-    #fill-form button:hover {
-      background: var(--button-alt-bg);
-      color: var(--button-alt-text);
-      transform: scale(1.04);
-    }
-
-    @media (max-width: 768px) {
-      .hero-content,
-      .documents-content,
-      .chatbot-interface {
-        flex-direction: column;
-        text-align: center;
-      }
-
-      .nav-links { gap: 15px; }
-
-      .nav-link { font-size: 1em; }
-
-      .hero-title { font-size: 2em; }
-
-      .cta-button,
-      .doc-btn,
-      .gen-btn { padding: 12px 20px; }
-
-      .document-actions { flex-direction: column; }
-
-      .category-tabs { justify-content: center; }
-
-      .document-header {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-      }
-
-      .document-header-actions {
-        flex-direction: column;
-        width: 100%;
-      }
-
-      .browse-btn,
-      .generate-btn,
-      .back-btn { width: 100%; }
-
-      .template-grid { grid-template-columns: 1fr; }
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Add html2pdf.js for PDF generation (as a fallback) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
   <div id="main-content">
+    <!-- Transparent Navbar -->
     <nav class="navbar">
       <div class="nav-container">
         <div class="nav-logo">Law Sphere</div>
@@ -750,6 +24,7 @@
       </div>
     </nav>
 
+    <!-- Home Section -->
     <section id="home" class="section hero-section">
       <div class="hero-content">
         <div>
@@ -766,6 +41,7 @@
       </div>
     </section>
 
+    <!-- Chatbot Section -->
     <section id="chatbot" class="section chatbot-section">
       <div class="chatbot-desc">
         <h2>AI Legal Chatbot</h2>
@@ -799,6 +75,7 @@
       </div>
     </section>
 
+    <!-- Documents Section -->
     <section id="documents" class="section documents-section">
       <div class="documents-content">
         <div class="documents-text">
@@ -819,6 +96,7 @@
       <div id="doc-categories" class="doc-categories" style="display:none;"></div>
     </section>
 
+    <!-- About Us Section -->
     <section id="about" class="section about-section">
       <div class="about-content">
         <h2>About Law Sphere</h2>
@@ -833,6 +111,7 @@
     </section>
   </div>
 
+  <!-- Documents Browser -->
   <div id="documents-browser" style="display:none;">
     <div class="documents-container">
       <div class="document-header">
@@ -849,6 +128,7 @@
     </div>
   </div>
 
+  <!-- Document Generator -->
   <div id="document-generator" style="display:none;">
     <div class="generator-header">
       <h1 class="generator-title">Document Generation</h1>
@@ -857,17 +137,21 @@
     <div class="generator-content">
       <div id="doc-selection" class="generator-section">
         <h2>1. Select Document</h2>
-        <p>Click a document to generate a filled version based on its template.</p>
+        <p>Click a document to generate it with AI assistance.</p>
         <div class="category-tabs" id="gen-category-tabs">
           <button class="category-tab active" data-category="all">All</button>
         </div>
         <div id="gen-document-content"></div>
       </div>
-      <div id="doc-fill" class="generator-section" style="display:none;">
-        <h2>2. Fill Document</h2>
-        <p>Preview the original template and fill in the required fields below.</p>
-        <div class="preview-box" id="template-preview"></div>
-        <form id="fill-form"></form>
+      <div id="doc-chat" class="generator-section" style="display:none;">
+        <h2>2. Answer Questions</h2>
+        <p>Chat with AI to fill the document. Enter your answers below.</p>
+        <div id="chat-box-gen" class="chat-box-gen"></div>
+        <div class="input-area-gen">
+          <input type="text" id="user-input-gen" placeholder="Type your answer..." />
+          <button id="send-btn-gen">Send</button>
+        </div>
+        <button id="generate-doc-final" class="generate-btn" style="display:none;">Generate Document</button>
       </div>
       <div id="doc-preview" class="generator-section" style="display:none;">
         <h2>3. Document Preview</h2>
@@ -881,10 +165,13 @@
     </div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <!-- Firebase Scripts (Updated to version 10.13.2) -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
 
+  <!-- Inline JavaScript -->
   <script>
+    // ====================== Firebase Configuration ======================
     const firebaseConfig = {
       apiKey: "AIzaSyBoiTgE744HFmOd7rFajV1k-nmsIETjOLs",
       authDomain: "law-sphere.firebaseapp.com",
@@ -895,10 +182,14 @@
       measurementId: "G-SXSJBVD62M"
     };
 
+    // ====================== API Configuration ======================
     const BASE_URL = 'https://0d741327-a5e5-4ad9-a587-70d23bc5bb36-00-3r683pxcjo2u7.pike.replit.dev';
     const CHAT_URL = `${BASE_URL}/chat`;
     const GOOGLE_AUTH_URL = `${BASE_URL}/auth/google`;
+    const GET_TEMPLATE_URL = `${BASE_URL}/get-document-template`;
+    const GENERATE_DOCUMENT_URL = `${BASE_URL}/generate-filled-document`;
 
+    // ====================== DOM Elements ======================
     const mainContent = document.getElementById('main-content');
     const documentsBrowser = document.getElementById('documents-browser');
     const documentGenerator = document.getElementById('document-generator');
@@ -911,16 +202,38 @@
     const generateDocBtn = document.getElementById('generate-doc');
     const docCategories = document.getElementById('doc-categories');
 
+    // ====================== Global Variables ======================
     let activeCategory = 'all';
     let categoriesData = {};
-    let genCategoriesData = {};
-    let selectedDocument = null;
 
-    if (!window.firebase?.apps?.length) {
-      window.firebase.initializeApp(firebaseConfig);
+    // Document Generator State
+    let selectedDocumentTitle = null;
+    let documentQuestions = [];
+    let documentResponses = {};
+    let currentQuestionIndex = 0;
+    let documentTemplate = null; // Store the fetched template structure
+
+    // Fallback Generic Template (if backend fails to provide a template)
+    const fallbackTemplate = (title, fields) => `
+      <div style="font-family: 'Poppins', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px;">
+        <h2 style="text-align: center; color: #123458; font-size: 1.5em; font-weight: 700;">
+          ${title.toUpperCase()}
+        </h2>
+        ${fields.map(field => `
+          <p style="font-size: 1em; margin: 5px 0;">
+            <strong>${field.toUpperCase()}:</strong> <span id="${field}">{${field}}</span>
+          </p>
+        `).join('')}
+      </div>
+    `;
+
+    // ====================== Firebase Initialization ======================
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
     }
-    const db = window.firebase.firestore();
+    const db = firebase.firestore();
 
+    // ====================== Event Listeners ======================
     document.addEventListener('DOMContentLoaded', () => {
       sendBtn?.addEventListener('click', () => sendMessage());
       clearChatBtn?.addEventListener('click', clearChat);
@@ -955,6 +268,7 @@
       });
     });
 
+    // ====================== Chatbot Functions ======================
     function sendMessage(message = userInput?.value?.trim()) {
       if (!message) return;
       addMessage(message, true);
@@ -991,6 +305,7 @@
       if (chatBox) chatBox.innerHTML = '';
     }
 
+    // ====================== Document Browser Functions ======================
     function showDocumentsBrowser() {
       mainContent.style.display = 'none';
       documentGenerator.style.display = 'none';
@@ -1024,7 +339,15 @@
       documentsBrowser.style.display = 'none';
       documentGenerator.style.display = 'none';
       mainContent.style.display = 'block';
-      selectedDocument = null;
+      resetDocumentGeneratorState();
+    }
+
+    function resetDocumentGeneratorState() {
+      selectedDocumentTitle = null;
+      documentQuestions = [];
+      documentResponses = {};
+      currentQuestionIndex = 0;
+      documentTemplate = null;
     }
 
     function loadDocuments() {
@@ -1108,7 +431,7 @@
         });
       } else {
         if (categoriesData[category] && categoriesData[category].length > 0) {
-          const categoryElement = createCategoryElement(category, categoriesData[category]);
+          const categoryElement = createCategoryElement(category, categoriesData[category]); // Fixed: Use categoriesData[category]
           contentElement.appendChild(categoryElement);
         } else {
           contentElement.innerHTML = '<p style="text-align: center; padding: 20px;">No documents found in this category.</p>';
@@ -1148,36 +471,75 @@
       document.body.removeChild(link);
     }
 
+    // ====================== Document Generator Functions ======================
     async function showDocumentGenerator() {
       mainContent.style.display = 'none';
       documentsBrowser.style.display = 'none';
       documentGenerator.style.display = 'block';
 
-      const genDocumentContent = document.getElementById('gen-document-content');
-      const genCategoryTabs = document.getElementById('gen-category-tabs');
+      documentGenerator.innerHTML = `
+        <div class="generator-header">
+          <h1 class="generator-title">Document Generation</h1>
+          <button class="back-home-btn" id="back-home-gen-btn">Back to Home</button>
+        </div>
+        <div class="generator-content">
+          <div id="doc-selection" class="generator-section">
+            <h2>1. Select Document</h2>
+            <p>Click a document to generate it with AI assistance.</p>
+            <div class="category-tabs" id="gen-category-tabs">
+              <button class="category-tab active" data-category="all">All</button>
+            </div>
+            <div id="gen-document-content"></div>
+          </div>
+          <div id="doc-chat" class="generator-section" style="display:none;">
+            <h2>2. Answer Questions</h2>
+            <p>Chat with AI to fill the document. Enter your answers below.</p>
+            <div id="chat-box-gen" class="chat-box-gen"></div>
+            <div class="input-area-gen">
+              <input type="text" id="user-input-gen" placeholder="Type your answer..." />
+              <button id="send-btn-gen">Send</button>
+            </div>
+            <button id="generate-doc-final" class="generate-btn" style="display:none;">Generate Document</button>
+          </div>
+          <div id="doc-preview" class="generator-section" style="display:none;">
+            <h2>3. Document Preview</h2>
+            <p id="preview-message">Your document is ready. Download it below.</p>
+            <div id="preview-container" class="preview-box"></div>
+            <div class="preview-actions">
+              <button id="download-doc" class="download-btn">Download Document</button>
+              <button id="start-over-gen" class="nav-btn">Start Over</button>
+            </div>
+          </div>
+        </div>
+      `;
 
-      genDocumentContent.innerHTML = '<p style="text-align: center; padding: 20px;">Loading documents...</p>';
+      document.getElementById('back-home-gen-btn').addEventListener('click', backToHome);
+      await loadGenDocuments();
+      setupGeneratorEventListeners();
+    }
 
+    async function loadGenDocuments() {
+      const documentContent = document.getElementById('gen-document-content');
+      const categoryTabs = document.getElementById('gen-category-tabs');
+      documentContent.innerHTML = '<p style="text-align: center; padding: 20px;">Loading documents...</p>';
+      window.genCategoriesData = {};
       try {
         const querySnapshot = await db.collection('legal_documents').get();
-        genCategoriesData = {};
-
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           const title = data.title;
           const displayTitle = title.replace(/\.pdf$|\.doc$/, '');
           const category = determineCategory(displayTitle, data.category);
-          if (!genCategoriesData[category]) genCategoriesData[category] = [];
-          genCategoriesData[category].push({
+          if (!window.genCategoriesData[category]) window.genCategoriesData[category] = [];
+          window.genCategoriesData[category].push({
             title: title,
             displayTitle: displayTitle,
-            url: data.url,
-            content: data.content || ''
+            url: data.url
           });
         });
 
-        genCategoryTabs.innerHTML = '<button class="category-tab active" data-category="all">All</button>';
-        const allCategories = Object.keys(genCategoriesData).sort();
+        categoryTabs.innerHTML = '';
+        const allCategories = Object.keys(window.genCategoriesData).sort();
         allCategories.forEach(category => {
           const tab = document.createElement('button');
           tab.className = 'category-tab';
@@ -1186,179 +548,251 @@
           tab.addEventListener('click', () => {
             document.querySelectorAll('#gen-category-tabs .category-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
-            displayGenDocumentsByCategory(category, genDocumentContent);
+            displayGenDocumentsByCategory(category, documentContent);
           });
-          genCategoryTabs.appendChild(tab);
+          categoryTabs.appendChild(tab);
         });
 
-        displayGenDocumentsByCategory('all', genDocumentContent);
+        const allTab = document.createElement('button');
+        allTab.className = 'category-tab active';
+        allTab.textContent = 'All';
+        allTab.dataset.category = 'all';
+        allTab.addEventListener('click', () => {
+          document.querySelectorAll('#gen-category-tabs .category-tab').forEach(t => t.classList.remove('active'));
+          allTab.classList.add('active');
+          displayGenDocumentsByCategory('all', documentContent);
+        });
+        categoryTabs.prepend(allTab);
 
-        document.getElementById('back-home-gen-btn').addEventListener('click', backToHome);
+        displayGenDocumentsByCategory('all', documentContent);
       } catch (error) {
-        genDocumentContent.innerHTML = `<p style="text-align: center; color: red; padding: 20px;">Error loading documents: ${error.message}</p>`;
+        documentContent.innerHTML = `<p style="text-align: center; color: red; padding: 20px;">Error loading documents: ${error.message}</p>`;
         console.error('Firestore error:', error);
       }
     }
 
     function displayGenDocumentsByCategory(category, contentElement) {
       contentElement.innerHTML = '';
-      const grid = document.createElement('div');
-      grid.className = 'template-grid';
-
+      const categoriesData = window.genCategoriesData || {};
       if (category === 'all') {
-        Object.entries(genCategoriesData).forEach(([cat, documents]) => {
-          documents.forEach(doc => {
-            const templateCard = createTemplateCard(doc);
-            grid.appendChild(templateCard);
-          });
-        });
-      } else if (genCategoriesData[category]) {
-        genCategoriesData[category].forEach(doc => {
-          const templateCard = createTemplateCard(doc);
-          grid.appendChild(templateCard);
+        Object.entries(categoriesData).forEach(([cat, documents]) => {
+          if (documents.length > 0) {
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'document-category';
+            const categoryTitle = document.createElement('h2');
+            categoryTitle.className = 'document-category-title';
+            categoryTitle.textContent = cat;
+            categoryDiv.appendChild(categoryTitle);
+            const documentsList = document.createElement('div');
+            documentsList.className = 'template-grid';
+            documents.forEach(doc => {
+              const docItem = document.createElement('div');
+              docItem.className = 'template-card';
+              docItem.innerHTML = `
+                <div class="template-title">${doc.displayTitle}</div>
+                <div class="template-desc">Click to generate</div>
+              `;
+              docItem.addEventListener('click', () => selectGenDocument(doc.title, doc.url));
+              documentsList.appendChild(docItem);
+            });
+            categoryDiv.appendChild(documentsList);
+            contentElement.appendChild(categoryDiv);
+          }
         });
       } else {
-        contentElement.innerHTML = '<p style="text-align: center; padding: 20px;">No documents found in this category.</p>';
-        return;
+        if (categoriesData[category] && categoriesData[category].length > 0) {
+          const documentsList = document.createElement('div');
+          documentsList.className = 'template-grid';
+          categoriesData[category].forEach(doc => {
+            const docItem = document.createElement('div');
+            docItem.className = 'template-card';
+            docItem.innerHTML = `
+              <div class="template-title">${doc.displayTitle}</div>
+              <div class="template-desc">Click to generate</div>
+            `;
+            docItem.addEventListener('click', () => selectGenDocument(doc.title, doc.url));
+            documentsList.appendChild(docItem);
+          });
+          contentElement.appendChild(documentsList);
+        } else {
+          contentElement.innerHTML = '<p style="text-align: center; padding: 20px;">No documents found in this category.</p>';
+        }
       }
-
-      contentElement.appendChild(grid);
     }
 
-    function createTemplateCard(doc) {
-      const card = document.createElement('div');
-      card.className = 'template-card';
-      card.innerHTML = `
-        <div class="template-title">${doc.displayTitle}</div>
-        <div class="template-desc">Click to generate</div>
-      `;
-      card.addEventListener('click', () => selectGenDocument(doc));
-      return card;
-    }
-
-    async function selectGenDocument(doc) {
-      selectedDocument = doc;
+    async function selectGenDocument(title, url) {
+      selectedDocumentTitle = title;
       document.getElementById('doc-selection').style.display = 'none';
-      document.getElementById('doc-fill').style.display = 'block';
-      document.getElementById('doc-preview').style.display = 'none';
+      document.getElementById('doc-chat').style.display = 'block';
+      documentQuestions = [];
+      documentResponses = {};
+      currentQuestionIndex = 0;
+      document.getElementById('chat-box-gen').innerHTML = '';
 
-      await loadTemplateAndGenerateForm();
+      // Fetch the template structure from the backend
+      await fetchTemplate(title, url);
+      fetchQuestions();
     }
 
-    async function loadTemplateAndGenerateForm() {
-      const templatePreview = document.getElementById('template-preview');
-      const fillForm = document.getElementById('fill-form');
+    async function fetchTemplate(title, url) {
+      try {
+        const response = await fetch(GET_TEMPLATE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ documentTitle: title, documentUrl: url })
+        });
+        if (!response.ok) throw new Error(`Failed to fetch template: ${response.status}`);
+        const data = await response.json();
+        documentTemplate = data.template || null;
+        documentQuestions = data.fields.map(field => ({
+          question: `Please provide the ${field.label || field.name}?`,
+          fieldName: field.name
+        }));
+      } catch (error) { // Fixed: Removed erroneous "33"
+        console.error('Template fetch error:', error);
+        addChatMessage(`Error: Failed to fetch template - ${error.message}`, false);
+        // Fallback to a generic template
+        documentTemplate = null;
+        documentQuestions = [
+          { question: "What is your full name?", fieldName: "fullName" },
+          { question: "What is your address?", fieldName: "address" }
+        ];
+      }
+    }
 
-      if (!selectedDocument.content) {
-        templatePreview.innerHTML = '<p style="color: red;">Template content not available.</p>';
+    function fetchQuestions() {
+      if (documentQuestions.length === 0) {
+        addChatMessage("Error: No fields available for this document.", false);
+        document.getElementById('doc-chat').style.display = 'none';
+        document.getElementById('doc-selection').style.display = 'block';
         return;
       }
-
-      templatePreview.textContent = selectedDocument.content;
-
-      const fields = extractFieldsFromTemplate(selectedDocument.content);
-
-      fillForm.innerHTML = '';
-      fields.forEach((field, index) => {
-        const label = document.createElement('label');
-        label.textContent = field.label;
-        const input = document.createElement(field.type === 'textarea' ? 'textarea' : 'input');
-        input.id = `field-${index}`;
-        input.name = field.label;
-        input.required = true;
-        if (field.type === 'textarea') {
-          input.rows = 3;
-        }
-        fillForm.appendChild(label);
-        fillForm.appendChild(input);
-      });
-
-      const submitButton = document.createElement('button');
-      submitButton.type = 'submit';
-      submitButton.textContent = 'Generate Document';
-      fillForm.appendChild(submitButton);
-
-      fillForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        generateDocument(fields);
-      });
+      addChatMessage('AI: Please answer the following questions to fill the document:', false);
+      addChatMessage(`AI: ${documentQuestions[currentQuestionIndex].question}`, false);
+      document.getElementById('send-btn-gen').style.display = 'block';
+      document.getElementById('generate-doc-final').style.display = 'none';
     }
 
-    function extractFieldsFromTemplate(content) {
-      const fields = [];
-      const lines = content.split('\n');
-      const fieldPatterns = [
-        { pattern: /(\d+\.\s*[^:]+):\s*_+/, type: 'input' },
-        { pattern: /([^:]+):\s*_+/, type: 'input' },
-        { pattern: /Details of Nominee\(s\)/, type: 'textarea' }
-      ];
-
-      lines.forEach(line => {
-        for (const pattern of fieldPatterns) {
-          const match = line.match(pattern.pattern);
-          if (match) {
-            const label = match[1].trim();
-            fields.push({
-              label: label,
-              type: pattern.type,
-              placeholder: line.includes('_____') ? line.match(/_+/)[0] : null
-            });
-            break;
-          }
-        }
-      });
-
-      return fields;
+    function addChatMessage(text, isUser) {
+      const chatBox = document.getElementById('chat-box-gen');
+      if (!chatBox) return;
+      const messageDiv = document.createElement('div');
+      messageDiv.className = isUser ? 'message user-message' : 'message bot-message';
+      messageDiv.textContent = text;
+      chatBox.appendChild(messageDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    function generateDocument(fields) {
-      const userInputs = fields.map((field, index) => {
-        const input = document.getElementById(`field-${index}`);
-        return { label: field.label, value: input.value };
-      });
+    function sendGenMessage(message = document.getElementById('user-input-gen').value.trim()) {
+      if (!message) return;
+      addChatMessage(message, true);
+      document.getElementById('user-input-gen').value = '';
 
-      let filledContent = selectedDocument.content;
-      userInputs.forEach(input => {
-        const regex = new RegExp(`${input.label}:\\s*_+$`, 'g');
-        filledContent = filledContent.replace(regex, `${input.label}: ${input.value}`);
-      });
-
-      const previewContainer = document.getElementById('preview-container');
-      previewContainer.textContent = filledContent;
-
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      const margin = 10;
-      const lineHeight = 10;
-      let yPosition = margin;
-
-      const lines = filledContent.split('\n');
-      doc.setFontSize(12);
-      lines.forEach(line => {
-        if (yPosition > 280) {
-          doc.addPage();
-          yPosition = margin;
+      if (currentQuestionIndex < documentQuestions.length) {
+        const currentQuestion = documentQuestions[currentQuestionIndex];
+        documentResponses[currentQuestion.fieldName] = message;
+        currentQuestionIndex++;
+        if (currentQuestionIndex < documentQuestions.length) {
+          const nextQuestion = documentQuestions[currentQuestionIndex];
+          addChatMessage(`AI: ${nextQuestion.question}`, false);
+        } else {
+          addChatMessage('AI: All questions answered. Click "Generate Document" to proceed.', false);
+          document.getElementById('generate-doc-final').style.display = 'block';
+          document.getElementById('send-btn-gen').style.display = 'none';
         }
-        doc.text(line, margin, yPosition);
-        yPosition += lineHeight;
-      });
+      }
+    }
 
-      selectedDocument.pdf = doc;
+    async function generateDocument() {
+      try {
+        if (!selectedDocumentTitle) {
+          throw new Error("No document selected. Please start over.");
+        }
+        if (Object.keys(documentResponses).length !== documentQuestions.length) {
+          throw new Error("Please answer all questions before generating the document.");
+        }
 
-      document.getElementById('doc-fill').style.display = 'none';
-      document.getElementById('doc-preview').style.display = 'block';
+        let template = documentTemplate;
+        let fields = documentQuestions.map(q => q.fieldName);
 
-      document.getElementById('download-doc').addEventListener('click', () => {
-        selectedDocument.pdf.save(`${selectedDocument.displayTitle}-filled.pdf`);
-      });
+        // If no template was fetched, use the fallback
+        if (!template) {
+          template = fallbackTemplate(selectedDocumentTitle.replace(/\.pdf$|\.doc$/, ''), fields);
+        }
 
-      document.getElementById('start-over-gen').addEventListener('click', () => {
-        selectedDocument = null;
+        // Call the backend to generate the filled document
+        const response = await fetch(GENERATE_DOCUMENT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            documentTitle: selectedDocumentTitle,
+            responses: documentResponses,
+            template: template
+          })
+        });
+
+        if (!response.ok) throw new Error(`Failed to generate document: ${response.status}`);
+        const data = await response.json();
+
+        // Display the filled template in the preview
+        document.getElementById('doc-chat').style.display = 'none';
+        document.getElementById('doc-preview').style.display = 'block';
+        document.getElementById('preview-container').innerHTML = data.documentContent;
+
+        // Update the preview message with success feedback
+        document.getElementById('preview-message').textContent = `Document generated successfully. ${
+          data.documentId ? `Stored with ID: ${data.documentId}.` : ''
+        } Download it below.`;
+
+        // Store the pdfBase64 for downloading
+        window.generatedPdfBase64 = data.pdfBase64;
+
+      } catch (error) {
+        console.error('Document generation error:', error);
+        addChatMessage(`Error: ${error.message}`, false);
+        document.getElementById('doc-chat').style.display = 'none';
         document.getElementById('doc-selection').style.display = 'block';
-        document.getElementById('doc-fill').style.display = 'none';
-        document.getElementById('doc-preview').style.display = 'none';
-        showDocumentGenerator();
+      }
+    }
+
+    function setupGeneratorEventListeners() {
+      document.getElementById('download-doc')?.addEventListener('click', () => {
+        if (window.generatedPdfBase64) {
+          // Download the PDF from the backend-generated Base64
+          const link = document.createElement('a');
+          link.href = `data:application/pdf;base64,${window.generatedPdfBase64}`;
+          link.download = `${selectedDocumentTitle.replace(/\.pdf$|\.doc$/, '')}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } else {
+          // Fallback to client-side PDF generation using html2pdf.js
+          const element = document.getElementById('preview-container');
+          const opt = {
+            margin: 0.5,
+            filename: `${selectedDocumentTitle.replace(/\.pdf$|\.doc$/, '')}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+          };
+          html2pdf().set(opt).from(element).save();
+        }
       });
+
+      document.getElementById('start-over-gen')?.addEventListener('click', () => {
+        resetDocumentGeneratorState();
+        window.generatedPdfBase64 = null; // Clear the stored Base64
+        document.getElementById('doc-selection').style.display = 'block';
+        document.getElementById('doc-chat').style.display = 'none';
+        document.getElementById('doc-preview').style.display = 'none';
+        loadGenDocuments();
+      });
+
+      document.getElementById('send-btn-gen')?.addEventListener('click', () => sendGenMessage());
+      document.getElementById('user-input-gen')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendGenMessage();
+      });
+      document.getElementById('generate-doc-final')?.addEventListener('click', generateDocument);
     }
   </script>
 </body>
