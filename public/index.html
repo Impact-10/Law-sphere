@@ -6,8 +6,6 @@
   <title>Law Sphere</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
-  <!-- Add html2pdf.js for PDF generation (as a fallback) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
   <div id="main-content">
@@ -137,24 +135,14 @@
     <div class="generator-content">
       <div id="doc-selection" class="generator-section">
         <h2>1. Select Document</h2>
-        <p>Choose a document type to generate with AI assistance.</p>
+        <p>Click a document to generate it with AI assistance.</p>
         <div class="category-tabs" id="gen-category-tabs">
           <button class="category-tab active" data-category="all">All</button>
         </div>
         <div id="gen-document-content"></div>
       </div>
-      <div id="doc-upload" class="generator-section" style="display:none;">
-        <h2>2. Upload Template</h2>
-        <p>Upload the PDF template for the selected document from your device.</p>
-        <div class="upload-section">
-          <label for="upload-template" class="upload-btn">Upload PDF Template</label>
-          <input type="file" id="upload-template" accept="application/pdf" style="display:none;" />
-          <p id="uploaded-template-name">No file selected</p>
-        </div>
-        <button id="proceed-to-chat" class="proceed-btn" style="display:none;">Proceed to Questions</button>
-      </div>
       <div id="doc-chat" class="generator-section" style="display:none;">
-        <h2>3. Answer Questions</h2>
+        <h2>2. Answer Questions</h2>
         <p>Chat with AI to fill the document. Enter your answers below.</p>
         <div id="chat-box-gen" class="chat-box-gen"></div>
         <div class="input-area-gen">
@@ -164,8 +152,8 @@
         <button id="generate-doc-final" class="generate-btn" style="display:none;">Generate Document</button>
       </div>
       <div id="doc-preview" class="generator-section" style="display:none;">
-        <h2>4. Document Preview</h2>
-        <p id="preview-message">Your document is ready. Download it below.</p>
+        <h2>3. Document Preview</h2>
+        <p>Your document is ready. Download it below.</p>
         <div id="preview-container" class="preview-box"></div>
         <div class="preview-actions">
           <button id="download-doc" class="download-btn">Download Document</button>
@@ -175,9 +163,9 @@
     </div>
   </div>
 
-  <!-- Firebase Scripts (Updated to version 10.13.2) -->
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
   <!-- Inline JavaScript -->
   <script>
@@ -193,11 +181,10 @@
     };
 
     // ====================== API Configuration ======================
-    const BASE_URL = 'https://0d741327-a5e5-4ad9-a587-70d23bc5bb36-00-3r683pxcjo2u7.pike.replit.dev';
+    const BASE_URL = 'https://law-sphere-backend.onrender.com';
     const CHAT_URL = `${BASE_URL}/chat`;
     const GOOGLE_AUTH_URL = `${BASE_URL}/auth/google`;
-    const GET_TEMPLATE_URL = `${BASE_URL}/get-document-template`;
-    const GENERATE_DOCUMENT_URL = `${BASE_URL}/generate-filled-document`;
+
 
     // ====================== DOM Elements ======================
     const mainContent = document.getElementById('main-content');
@@ -217,41 +204,27 @@
     let categoriesData = {};
 
     // Document Generator State
-    let selectedDocumentTitle = null;
-    let selectedDocumentFile = null; // Store the user-uploaded PDF template
+    let selectedDocumentTitle = null; // Stores the raw title (e.g., "nominationform.pdf")
     let documentQuestions = [];
     let documentResponses = {};
     let currentQuestionIndex = 0;
-    let documentTemplate = null; // Store the fetched template structure
-
-    // Fallback Generic Template (if backend fails to provide a template)
-    const fallbackTemplate = (title, fields) => `
-      <div style="font-family: 'Poppins', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px;">
-        <h2 style="text-align: center; color: #123458; font-size: 1.5em; font-weight: 700;">
-          ${title.toUpperCase()}
-        </h2>
-        ${fields.map(field => `
-          <p style="font-size: 1em; margin: 5px 0;">
-            <strong>${field.toUpperCase()}:</strong> <span id="${field}">{${field}}</span>
-          </p>
-        `).join('')}
-      </div>
-    `;
 
     // ====================== Firebase Initialization ======================
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
+    if (!window.firebase?.apps?.length) {
+      window.firebase.initializeApp(firebaseConfig);
     }
-    const db = firebase.firestore();
+    const db = window.firebase.firestore();
 
     // ====================== Event Listeners ======================
     document.addEventListener('DOMContentLoaded', () => {
+      // Chat Functionality
       sendBtn?.addEventListener('click', () => sendMessage());
       clearChatBtn?.addEventListener('click', clearChat);
       userInput?.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
       });
 
+      // Quick Questions
       document.querySelectorAll('.quick-question')?.forEach(button => {
         button.addEventListener('click', () => {
           const message = button.getAttribute('data-message');
@@ -259,13 +232,16 @@
         });
       });
 
+      // Document Buttons
       fetchDocsBtn?.addEventListener('click', showDocumentsBrowser);
       generateDocBtn?.addEventListener('click', showDocumentGenerator);
 
+      // Login Button
       loginButton?.addEventListener('click', () => {
         window.location.href = GOOGLE_AUTH_URL;
       });
 
+      // Navbar Smooth Scroll
       document.querySelectorAll('.nav-link')?.forEach(link => {
         link.addEventListener('click', (e) => {
           const href = link.getAttribute('href');
@@ -355,11 +331,9 @@
 
     function resetDocumentGeneratorState() {
       selectedDocumentTitle = null;
-      selectedDocumentFile = null; // Reset the selected file
       documentQuestions = [];
       documentResponses = {};
       currentQuestionIndex = 0;
-      documentTemplate = null;
     }
 
     function loadDocuments() {
@@ -374,17 +348,18 @@
           categoriesData = {};
           querySnapshot.forEach((doc) => {
             const data = doc.data();
-            const title = data.title;
-            const displayTitle = title.replace(/\.pdf$|\.doc$/, '');
+            const title = data.title; // Keep the raw title (e.g., "nominationform.pdf")
+            const displayTitle = title.replace(/\.pdf$|\.doc$/, ''); // For display only
             const category = determineCategory(displayTitle, data.category);
             if (!categoriesData[category]) categoriesData[category] = [];
             categoriesData[category].push({
-              title: title,
-              displayTitle: displayTitle,
+              title: title, // Store raw title
+              displayTitle: displayTitle, // For UI display
               url: data.url
             });
           });
 
+          // Create category tabs
           const allCategories = Object.keys(categoriesData).sort();
           allCategories.forEach(category => {
             const tab = document.createElement('button');
@@ -399,8 +374,10 @@
             categoryTabs.appendChild(tab);
           });
 
+          // Display all documents initially
           displayDocumentsByCategory('all', documentContent);
 
+          // Add success message
           const totalDocs = Object.values(categoriesData).reduce((acc, docs) => acc + docs.length, 0);
           const messageElement = document.createElement('div');
           messageElement.className = 'bot-message';
@@ -443,7 +420,7 @@
         });
       } else {
         if (categoriesData[category] && categoriesData[category].length > 0) {
-          const categoryElement = createCategoryElement(category, categoriesData[category]);
+          const categoryElement = createCategoryElement(category, documents);
           contentElement.appendChild(categoryElement);
         } else {
           contentElement.innerHTML = '<p style="text-align: center; padding: 20px;">No documents found in this category.</p>';
@@ -465,11 +442,9 @@
         docItem.className = 'document-item';
         docItem.innerHTML = `
           <div class="document-title">${doc.displayTitle}</div>
-          <div class="document-actions">
-            <button class="document-action download-btn">Download</button>
-          </div>
+          <div class="document-action">Download ${doc.displayTitle}</div>
         `;
-        docItem.querySelector('.download-btn').addEventListener('click', () => downloadDocument(doc.url, doc.displayTitle));
+        docItem.addEventListener('click', () => downloadDocument(doc.url, doc.displayTitle));
         documentsList.appendChild(docItem);
       });
       categoryDiv.appendChild(documentsList);
@@ -499,24 +474,14 @@
         <div class="generator-content">
           <div id="doc-selection" class="generator-section">
             <h2>1. Select Document</h2>
-            <p>Choose a document type to generate with AI assistance.</p>
+            <p>Click a document to generate it with AI assistance.</p>
             <div class="category-tabs" id="gen-category-tabs">
               <button class="category-tab active" data-category="all">All</button>
             </div>
             <div id="gen-document-content"></div>
           </div>
-          <div id="doc-upload" class="generator-section" style="display:none;">
-            <h2>2. Upload Template</h2>
-            <p>Upload the PDF template for the selected document from your device.</p>
-            <div class="upload-section">
-              <label for="upload-template" class="upload-btn">Upload PDF Template</label>
-              <input type="file" id="upload-template" accept="application/pdf" style="display:none;" />
-              <p id="uploaded-template-name">No file selected</p>
-            </div>
-            <button id="proceed-to-chat" class="proceed-btn" style="display:none;">Proceed to Questions</button>
-          </div>
           <div id="doc-chat" class="generator-section" style="display:none;">
-            <h2>3. Answer Questions</h2>
+            <h2>2. Answer Questions</h2>
             <p>Chat with AI to fill the document. Enter your answers below.</p>
             <div id="chat-box-gen" class="chat-box-gen"></div>
             <div class="input-area-gen">
@@ -526,8 +491,8 @@
             <button id="generate-doc-final" class="generate-btn" style="display:none;">Generate Document</button>
           </div>
           <div id="doc-preview" class="generator-section" style="display:none;">
-            <h2>4. Document Preview</h2>
-            <p id="preview-message">Your document is ready. Download it below.</p>
+            <h2>3. Document Preview</h2>
+            <p>Your document is ready. Download it below.</p>
             <div id="preview-container" class="preview-box"></div>
             <div class="preview-actions">
               <button id="download-doc" class="download-btn">Download Document</button>
@@ -549,19 +514,22 @@
       window.genCategoriesData = {};
       try {
         const querySnapshot = await db.collection('legal_documents').get();
+        console.log("Documents fetched from Firestore for generator:");
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          const title = data.title;
-          const displayTitle = title.replace(/\.pdf$|\.doc$/, '');
+          const title = data.title; // Keep the raw title (e.g., "nominationform.pdf")
+          const displayTitle = title.replace(/\.pdf$|\.doc$/, ''); // For display only
+          console.log("Document title:", title);
           const category = determineCategory(displayTitle, data.category);
           if (!window.genCategoriesData[category]) window.genCategoriesData[category] = [];
           window.genCategoriesData[category].push({
-            title: title,
-            displayTitle: displayTitle,
+            title: title, // Store raw title
+            displayTitle: displayTitle, // For UI display
             url: data.url
           });
         });
 
+        // Create category tabs
         categoryTabs.innerHTML = '';
         const allCategories = Object.keys(window.genCategoriesData).sort();
         allCategories.forEach(category => {
@@ -577,6 +545,7 @@
           categoryTabs.appendChild(tab);
         });
 
+        // Add "All" tab at the start
         const allTab = document.createElement('button');
         allTab.className = 'category-tab active';
         allTab.textContent = 'All';
@@ -614,9 +583,9 @@
               docItem.className = 'template-card';
               docItem.innerHTML = `
                 <div class="template-title">${doc.displayTitle}</div>
-                <div class="template-desc">Click to select this document type</div>
+                <div class="template-desc">Click to generate</div>
               `;
-              docItem.addEventListener('click', () => selectGenDocument(doc.displayTitle));
+              docItem.addEventListener('click', () => selectGenDocument(doc.title));
               documentsList.appendChild(docItem);
             });
             categoryDiv.appendChild(documentsList);
@@ -632,9 +601,9 @@
             docItem.className = 'template-card';
             docItem.innerHTML = `
               <div class="template-title">${doc.displayTitle}</div>
-              <div class="template-desc">Click to select this document type</div>
+              <div class="template-desc">Click to generate</div>
             `;
-            docItem.addEventListener('click', () => selectGenDocument(doc.displayTitle));
+            docItem.addEventListener('click', () => selectGenDocument(doc.title));
             documentsList.appendChild(docItem);
           });
           contentElement.appendChild(documentsList);
@@ -644,60 +613,56 @@
       }
     }
 
-    function selectGenDocument(displayTitle) {
-      selectedDocumentTitle = displayTitle;
+    function selectGenDocument(title) {
+      selectedDocumentTitle = title; // Use the raw title (e.g., "nominationform.pdf")
+      console.log("Selected document for generation:", selectedDocumentTitle);
       document.getElementById('doc-selection').style.display = 'none';
-      document.getElementById('doc-upload').style.display = 'block';
-      document.getElementById('uploaded-template-name').textContent = 'No file selected';
+      document.getElementById('doc-chat').style.display = 'block';
+      documentQuestions = [];
+      documentResponses = {};
+      currentQuestionIndex = 0;
+      document.getElementById('chat-box-gen').innerHTML = '';
+      fetchQuestions();
     }
 
-    async function fetchTemplate() {
-      if (!selectedDocumentFile) {
-        addChatMessage('Error: No template uploaded.', false);
-        document.getElementById('doc-chat').style.display = 'none';
-        document.getElementById('doc-upload').style.display = 'block';
-        return;
-      }
-
+    async function fetchQuestions() {
       try {
-        const formData = new FormData();
-        formData.append('documentTitle', selectedDocumentTitle);
-        formData.append('pdfFile', selectedDocumentFile);
-
-        const response = await fetch(GET_TEMPLATE_URL, {
+        console.log("Fetching questions for document:", selectedDocumentTitle);
+        if (!selectedDocumentTitle) {
+          addChatMessage("Error: No document selected. Please start over.", false);
+          console.error("Fetch questions error: No document selected");
+          document.getElementById('doc-chat').style.display = 'none';
+          document.getElementById('doc-selection').style.display = 'block';
+          return;
+        }
+        const response = await fetch(`${BASE_URL}/get-document-questions`, {
           method: 'POST',
-          body: formData
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ documentTitle: selectedDocumentTitle })
         });
-
-        if (!response.ok) throw new Error(`Failed to fetch template: ${response.status}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Failed to fetch questions: ${response.status} - ${errorData.error}`);
+        }
         const data = await response.json();
-        documentTemplate = data.template || null;
-        documentQuestions = data.fields.map(field => ({
-          question: `Please provide the ${field.label || field.name}?`,
-          fieldName: field.name
-        }));
+        documentQuestions = data.questions || [];
+        console.log("Questions received:", documentQuestions);
+        if (documentQuestions.length === 0) {
+          addChatMessage("Error: No questions available for this document.", false);
+          document.getElementById('doc-chat').style.display = 'none';
+          document.getElementById('doc-selection').style.display = 'block';
+          return;
+        }
+        addChatMessage('AI: Please answer the following questions to fill the document:', false);
+        addChatMessage(`AI: ${documentQuestions[currentQuestionIndex].question}`, false);
+        document.getElementById('send-btn-gen').style.display = 'block';
+        document.getElementById('generate-doc-final').style.display = 'none';
       } catch (error) {
-        console.error('Template fetch error:', error);
-        addChatMessage(`Error: Unable to fetch the template from the server (it might be offline). Using a default template instead.`, false);
-        documentTemplate = null;
-        documentQuestions = [
-          { question: "What is your full name?", fieldName: "fullName" },
-          { question: "What is your address?", fieldName: "address" }
-        ];
-      }
-    }
-
-    function fetchQuestions() {
-      if (documentQuestions.length === 0) {
-        addChatMessage("Error: No fields available for this document.", false);
+        addChatMessage(`Error: ${error.message}`, false);
+        console.error('Question fetch error:', error);
         document.getElementById('doc-chat').style.display = 'none';
-        document.getElementById('doc-upload').style.display = 'block';
-        return;
+        document.getElementById('doc-selection').style.display = 'block';
       }
-      addChatMessage('AI: Please answer the following questions to fill the document:', false);
-      addChatMessage(`AI: ${documentQuestions[currentQuestionIndex].question}`, false);
-      document.getElementById('send-btn-gen').style.display = 'block';
-      document.getElementById('generate-doc-final').style.display = 'none';
     }
 
     function addChatMessage(text, isUser) {
@@ -718,6 +683,7 @@
       if (currentQuestionIndex < documentQuestions.length) {
         const currentQuestion = documentQuestions[currentQuestionIndex];
         documentResponses[currentQuestion.fieldName] = message;
+        console.log("Current responses:", documentResponses);
         currentQuestionIndex++;
         if (currentQuestionIndex < documentQuestions.length) {
           const nextQuestion = documentQuestions[currentQuestionIndex];
@@ -732,116 +698,63 @@
 
     async function generateDocument() {
       try {
+        console.log("Generating document with title:", selectedDocumentTitle);
+        console.log("Responses:", documentResponses);
         if (!selectedDocumentTitle) {
           throw new Error("No document selected. Please start over.");
         }
         if (Object.keys(documentResponses).length !== documentQuestions.length) {
           throw new Error("Please answer all questions before generating the document.");
         }
-
-        let template = documentTemplate;
-        let fields = documentQuestions.map(q => q.fieldName);
-
-        // If no template was fetched, use the fallback
-        if (!template) {
-          template = fallbackTemplate(selectedDocumentTitle.replace(/\.pdf$|\.doc$/, ''), fields);
-        }
-
-        // Call the backend to generate the filled document
-        const response = await fetch(GENERATE_DOCUMENT_URL, {
+        const response = await fetch(`${BASE_URL}/generate-filled-document`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            documentTitle: selectedDocumentTitle,
-            responses: documentResponses,
-            template: template
+            documentTitle: selectedDocumentTitle, // Send raw title (e.g., "nominationform.pdf")
+            responses: documentResponses
           })
         });
-
-        if (!response.ok) throw new Error(`Failed to generate document: ${response.status}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Failed to generate document: ${response.status} - ${errorData.details || errorData.error}`);
+        }
         const data = await response.json();
-
-        // Display the filled template in the preview
+        console.log("Document generation response:", data);
         document.getElementById('doc-chat').style.display = 'none';
         document.getElementById('doc-preview').style.display = 'block';
-        document.getElementById('preview-container').innerHTML = data.documentContent;
-
-        // Update the preview message with success feedback
-        document.getElementById('preview-message').textContent = `Document generated successfully. ${
-          data.documentId ? `Stored with ID: ${data.documentId}.` : ''
-        } Download it below.`;
-
-        // Store the pdfBase64 for downloading
-        window.generatedPdfBase64 = data.pdfBase64;
-
+        document.getElementById('preview-container').innerHTML = data.documentContent.replace(/\n/g, '<br>');
+        document.getElementById('download-doc').dataset.pdf = data.pdfBase64 || '';
       } catch (error) {
-        console.error('Document generation error:', error);
         addChatMessage(`Error: ${error.message}`, false);
+        console.error('Generation error:', error);
         document.getElementById('doc-chat').style.display = 'none';
         document.getElementById('doc-selection').style.display = 'block';
       }
     }
 
     function setupGeneratorEventListeners() {
-      // Handle template upload
-      const uploadInput = document.getElementById('upload-template');
-      const uploadedTemplateName = document.getElementById('uploaded-template-name');
-      const proceedBtn = document.getElementById('proceed-to-chat');
-      uploadInput?.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        if (file) {
-          selectedDocumentFile = file;
-          uploadedTemplateName.textContent = file.name;
-          proceedBtn.style.display = 'block';
-        } else {
-          uploadedTemplateName.textContent = 'No file selected';
-          proceedBtn.style.display = 'none';
-        }
-      });
-
-      // Proceed to Q&A section after uploading template
-      proceedBtn?.addEventListener('click', async () => {
-        document.getElementById('doc-upload').style.display = 'none';
-        document.getElementById('doc-chat').style.display = 'block';
-        documentQuestions = [];
-        documentResponses = {};
-        currentQuestionIndex = 0;
-        document.getElementById('chat-box-gen').innerHTML = '';
-        await fetchTemplate();
-        fetchQuestions();
-      });
-
       document.getElementById('download-doc')?.addEventListener('click', () => {
-        if (window.generatedPdfBase64) {
-          // Download the PDF from the backend-generated Base64
-          const link = document.createElement('a');
-          link.href = `data:application/pdf;base64,${window.generatedPdfBase64}`;
-          link.download = `${selectedDocumentTitle.replace(/\.pdf$|\.doc$/, '')}.pdf`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+        const pdfData = document.getElementById('download-doc').dataset.pdf;
+        if (pdfData) {
+          const blob = b64toBlob(pdfData, 'application/pdf');
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${selectedDocumentTitle.replace(/\.pdf$|\.doc$/, '')}.pdf`; // Remove .pdf for filename
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
         } else {
-          // Fallback to client-side PDF generation using html2pdf.js
-          const element = document.getElementById('preview-container');
-          const opt = {
-            margin: 0.5,
-            filename: `${selectedDocumentTitle.replace(/\.pdf$|\.doc$/, '')}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-          };
-          html2pdf().set(opt).from(element).save();
+          alert('No PDF data available for download.');
         }
       });
 
       document.getElementById('start-over-gen')?.addEventListener('click', () => {
         resetDocumentGeneratorState();
-        window.generatedPdfBase64 = null; // Clear the stored Base64
         document.getElementById('doc-selection').style.display = 'block';
-        document.getElementById('doc-upload').style.display = 'none';
         document.getElementById('doc-chat').style.display = 'none';
         document.getElementById('doc-preview').style.display = 'none';
-        uploadedTemplateName.textContent = 'No file selected';
         loadGenDocuments();
       });
 
@@ -850,6 +763,21 @@
         if (e.key === 'Enter') sendGenMessage();
       });
       document.getElementById('generate-doc-final')?.addEventListener('click', generateDocument);
+    }
+
+    function b64toBlob(b64Data, contentType = '', sliceSize = 512) {
+      const byteCharacters = atob(b64Data);
+      const byteArrays = [];
+      for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+        const slice = byteCharacters.slice(offset, offset + sliceSize);
+        const byteNumbers = new Array(slice.length);
+        for (let i = 0; i < slice.length; i++) {
+          byteNumbers[i] = slice.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        byteArrays.push(byteArray);
+      }
+      return new Blob(byteArrays, { type: contentType });
     }
   </script>
 </body>
